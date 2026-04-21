@@ -1,7 +1,16 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, StyleSheet, StatusBar, Platform, SafeAreaView } from 'react-native';
+import { View, Text, Pressable, StyleSheet, StatusBar, Platform, SafeAreaView, ActivityIndicator } from 'react-native';
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
+import {
+  useFonts,
+  NotoSansTC_400Regular,
+  NotoSansTC_500Medium,
+  NotoSansTC_700Bold,
+  NotoSansTC_900Black,
+} from '@expo-google-fonts/noto-sans-tc';
+import { Syne_500Medium, Syne_700Bold } from '@expo-google-fonts/syne';
 import { C } from './src/theme/tokens';
+import { TweaksProvider } from './src/context/TweaksContext';
 import CaregiverApp from './src/caregiver/CaregiverApp';
 import ElderApp from './src/elder/ElderApp';
 
@@ -36,20 +45,34 @@ function ModeSelector({ onSelect }) {
 
 export default function App() {
   const [mode, setMode] = useState('selector');
+  const [fontsLoaded] = useFonts({
+    NotoSansTC_400Regular,
+    NotoSansTC_500Medium,
+    NotoSansTC_700Bold,
+    NotoSansTC_900Black,
+    Syne_500Medium,
+    Syne_700Bold,
+  });
 
   return (
-    <View style={styles.root}>
-      <ExpoStatusBar style="light" />
-      <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
-        {mode === 'selector' && <ModeSelector onSelect={setMode} />}
-        {mode === 'caregiver' && (
-          <CaregiverApp onSwitchMode={() => setMode('elder')} onHome={() => setMode('selector')} />
-        )}
-        {mode === 'elder' && (
-          <ElderApp onSwitchMode={() => setMode('caregiver')} onHome={() => setMode('selector')} />
-        )}
-      </SafeAreaView>
-    </View>
+    <TweaksProvider>
+      <View style={styles.root}>
+        <ExpoStatusBar style="light" />
+        <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
+          {!fontsLoaded ? (
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+              <ActivityIndicator color={C.amber} />
+            </View>
+          ) : (
+            <>
+              {mode === 'selector' && <ModeSelector onSelect={setMode} />}
+              {mode === 'caregiver' && <CaregiverApp onSwitchMode={() => setMode('elder')} onHome={() => setMode('selector')} />}
+              {mode === 'elder' && <ElderApp onSwitchMode={() => setMode('caregiver')} onHome={() => setMode('selector')} />}
+            </>
+          )}
+        </SafeAreaView>
+      </View>
+    </TweaksProvider>
   );
 }
 
@@ -59,20 +82,8 @@ const styles = StyleSheet.create({
     backgroundColor: C.bg,
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
-  selectorWrap: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 14,
-    padding: 28,
-  },
-  brand: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: C.amber,
-    letterSpacing: 1,
-    marginBottom: 6,
-  },
+  selectorWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 14, padding: 28 },
+  brand: { fontSize: 28, fontWeight: '700', color: C.amber, letterSpacing: 1, marginBottom: 6, fontFamily: 'Syne_700Bold' },
   brandSub: { fontSize: 13, color: C.text2, marginBottom: 14 },
   selectorBtn: {
     width: '100%',

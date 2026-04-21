@@ -87,7 +87,7 @@ export default function DashboardScreen({ onSOS, onCall, onMap, goTo, reportStat
 
         {/* Header */}
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 14, paddingBottom: 10 }}>
-          <Text style={{ fontSize: 22, fontWeight: '700', color: C.amber, letterSpacing: 0.5 }}>
+          <Text style={{ fontSize: 22, fontWeight: '700', color: C.amber, letterSpacing: 0.5, fontFamily: 'Syne_700Bold' }}>
             Care<Text style={{ color: C.text, fontWeight: '500' }}>Link</Text>
           </Text>
           <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
