@@ -3,6 +3,7 @@ import { View, Text, Pressable, Animated, Easing } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { C } from '../theme/tokens';
 import Pulse from '../components/Pulse';
+import RadialGlow from '../components/RadialGlow';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -42,7 +43,9 @@ export default function ElderSOS({ onBack }) {
   const strokeDashoffset = progress.interpolate({ inputRange: [0, 1], outputRange: [502, 0] });
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#0d0505', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+    <View style={{ flex: 1, backgroundColor: '#0d0505', alignItems: 'center', justifyContent: 'center', padding: 24, overflow: 'hidden' }}>
+      {/* Red radial gradient background */}
+      <RadialGlow color="rgba(239,68,68,0.2)" size={420} style={{ top: '55%', left: '50%', marginTop: -210, marginLeft: -210 }} />
       {phase === 'sent' ? (
         <View style={{ alignItems: 'center' }}>
           <View style={{ width: 88, height: 88, borderRadius: 44, backgroundColor: 'rgba(239,68,68,0.12)', borderWidth: 2, borderColor: C.red, alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>

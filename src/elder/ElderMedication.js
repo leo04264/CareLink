@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { C } from '../theme/tokens';
 import { CameraIcon } from '../components/Icons';
 import Spin from '../components/Spin';
+import RadialGlow from '../components/RadialGlow';
 
 function ScanLine({ color = C.green, width = 220 }) {
   const anim = useRef(new Animated.Value(0)).current;
@@ -36,7 +37,8 @@ export default function ElderMedication({ onBack }) {
 
   if (phase === 'done') {
     return (
-      <LinearGradient colors={['#051a0d', '#0a1a10']} style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28, gap: 16 }}>
+      <LinearGradient colors={['#051a0d', '#0a1a10']} style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28, gap: 16, overflow: 'hidden' }}>
+        <RadialGlow color="rgba(34,197,94,0.18)" size={320} style={{ top: '50%', left: '50%', marginTop: -160, marginLeft: -160 }} />
         <View style={{ width: 140, height: 140, borderRadius: 20, backgroundColor: '#0a1a0a', borderWidth: 2, borderColor: C.greenDim, alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ fontSize: 44 }}>💊</Text>
           <View style={{ position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(34,197,94,0.9)', borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 }}>
@@ -103,7 +105,8 @@ export default function ElderMedication({ onBack }) {
 
   if (phase === 'processing') {
     return (
-      <View style={{ flex: 1, backgroundColor: '#050a05', alignItems: 'center', justifyContent: 'center', padding: 32, gap: 20 }}>
+      <View style={{ flex: 1, backgroundColor: '#050a05', alignItems: 'center', justifyContent: 'center', padding: 32, gap: 20, overflow: 'hidden' }}>
+        <RadialGlow color="rgba(34,197,94,0.12)" size={360} style={{ top: '50%', left: '50%', marginTop: -180, marginLeft: -180 }} />
         <Spin>
           <View style={{ width: 72, height: 72, borderRadius: 36, borderWidth: 3, borderColor: 'rgba(34,197,94,0.2)', borderTopColor: C.green }} />
         </Spin>

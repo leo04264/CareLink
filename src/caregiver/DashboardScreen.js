@@ -3,6 +3,7 @@ import { View, Text, Pressable, ScrollView } from 'react-native';
 import { C } from '../theme/tokens';
 import { BellIcon, PhoneIcon, MapIcon, CheckIcon, XIcon } from '../components/Icons';
 import Pulse from '../components/Pulse';
+import RadialGlow from '../components/RadialGlow';
 
 export default function DashboardScreen({ onSOS, onCall, onMap, goTo, reportStatus = 'warning' }) {
   const [meds, setMeds] = useState([
@@ -131,7 +132,13 @@ export default function DashboardScreen({ onSOS, onCall, onMap, goTo, reportStat
 
         <View style={{ paddingHorizontal: 16, gap: 14 }}>
           {/* Elder status card */}
-          <View style={{ backgroundColor: C.card, borderWidth: 0.5, borderColor: elderCardBorder, borderRadius: 16, padding: 16 }}>
+          <View style={{ backgroundColor: C.card, borderWidth: 0.5, borderColor: elderCardBorder, borderRadius: 16, padding: 16, overflow: 'hidden', position: 'relative' }}>
+            {/* top-right glow circle */}
+            <RadialGlow
+              size={160}
+              color={reportStatus === 'critical' ? 'rgba(239,68,68,0.18)' : reportStatus === 'warning' ? 'rgba(245,158,11,0.18)' : 'rgba(20,184,166,0.18)'}
+              style={{ top: -50, right: -50 }}
+            />
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 }}>
               <View style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: elderAvatarBg, borderWidth: 1.5, borderColor: statusBadge.border, alignItems: 'center', justifyContent: 'center' }}>
                 <Text style={{ fontSize: 22 }}>{elderFace}</Text>
