@@ -261,6 +261,22 @@ export default function DashboardScreen({ onSOS, onCall, onMap, goTo, reportStat
       {showNotifPop && (
         <>
           <Pressable onPress={() => setShowNotifPop(false)} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 60 }} />
+          {/* arrow pointing at the bell */}
+          <View
+            style={{
+              position: 'absolute',
+              top: 56,
+              right: 28,
+              width: 12,
+              height: 12,
+              backgroundColor: 'rgba(16,22,34,0.98)',
+              borderLeftWidth: 0.5,
+              borderTopWidth: 0.5,
+              borderColor: C.border2,
+              transform: [{ rotate: '45deg' }],
+              zIndex: 71,
+            }}
+          />
           <View
             style={{
               position: 'absolute',

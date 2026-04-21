@@ -3,6 +3,7 @@ import { View, Text, Pressable, ScrollView } from 'react-native';
 import { C } from '../theme/tokens';
 import { XIcon, ChevRightIcon, ClockIcon } from '../components/Icons';
 import Pulse from '../components/Pulse';
+import FadeIn from '../components/FadeIn';
 
 function NotifDetail({ notif, onClose }) {
   const typeColor = {
@@ -23,7 +24,7 @@ function NotifDetail({ notif, onClose }) {
   const typeLabel = { sos: '緊急', med: '藥物', ok: '回報', health: '健康' }[notif.type] || '通知';
 
   return (
-    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: C.bg, zIndex: 150 }}>
+    <FadeIn style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: C.bg, zIndex: 150 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 0.5, borderBottomColor: C.border }}>
         <Pressable onPress={onClose} style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: C.card, borderWidth: 0.5, borderColor: C.border, alignItems: 'center', justifyContent: 'center' }}>
           <XIcon color={C.text2} />
@@ -69,7 +70,7 @@ function NotifDetail({ notif, onClose }) {
           </View>
         )}
       </ScrollView>
-    </View>
+    </FadeIn>
   );
 }
 

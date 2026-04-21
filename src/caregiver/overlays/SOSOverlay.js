@@ -5,6 +5,7 @@ import { C } from '../../theme/tokens';
 import { PlusIcon } from '../../components/Icons';
 import Pulse from '../../components/Pulse';
 import Toggle from '../../components/Toggle';
+import RippleRings from '../../components/RippleRings';
 
 export default function SOSOverlay({ onClose }) {
   const [phase, setPhase] = useState('notifying'); // notifying | confirm119 | calling119
@@ -96,6 +97,9 @@ export default function SOSOverlay({ onClose }) {
 
       {phase === 'calling119' && (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 16 }}>
+          {/* Red radial pulse behind the 119 icon */}
+          <RippleRings color="rgba(239,68,68,0.45)" count={3} size={180} step={80} duration={2000} style={{ top: '35%' }} />
+
           <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(239,68,68,0.15)', borderWidth: 2, borderColor: C.red, alignItems: 'center', justifyContent: 'center' }}>
             <Text style={{ fontSize: 36 }}>🚑</Text>
           </View>

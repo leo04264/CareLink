@@ -5,10 +5,11 @@ import { C } from '../theme/tokens';
 import Toggle from '../components/Toggle';
 import { ChevRightIcon, XIcon, PlusIcon } from '../components/Icons';
 import TimeField from '../components/TimeField';
+import FadeIn from '../components/FadeIn';
 
 function SettingSubPage({ title, onBack, children }) {
   return (
-    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: C.bg, zIndex: 150 }}>
+    <FadeIn style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: C.bg, zIndex: 150 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 0.5, borderBottomColor: C.border }}>
         <Pressable onPress={onBack} style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: C.card, borderWidth: 0.5, borderColor: C.border, alignItems: 'center', justifyContent: 'center' }}>
           <XIcon color={C.text2} />
@@ -16,7 +17,7 @@ function SettingSubPage({ title, onBack, children }) {
         <Text style={{ fontSize: 15, fontWeight: '700', color: C.text }}>{title}</Text>
       </View>
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>{children}</ScrollView>
-    </View>
+    </FadeIn>
   );
 }
 
