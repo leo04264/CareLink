@@ -1,0 +1,28 @@
+{
+  "expo": {
+    "name": "CareLink",
+    "slug": "carelink",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#05070a",
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.carelink.app"
+    },
+    "android": {
+      "package": "com.carelink.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#05070a"
+      }
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "splash": {
+      "backgroundColor": "#05070a",
+      "resizeMode": "contain"
+    }
+  }
+}
