@@ -1,0 +1,2384 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>長輩照護 App — 互動原型</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Syne:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#0a0d14;--surface:#111520;--card:#161c2a;--card2:#1a2133;
+    --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+    --amber:#f59e0b;--amber-dim:#b97a08;--amber-glow:rgba(245,158,11,0.12);
+    --teal:#14b8a6;--teal-dim:#0d8a7c;--teal-glow:rgba(20,184,166,0.1);
+    --red:#ef4444;--red-glow:rgba(239,68,68,0.15);
+    --text:#e2e8f0;--text2:#94a3b8;--text3:#4b5e78;
+    --green:#22c55e;--blue:#3b82f6;
+  }
+  html,body{height:100%;background:var(--bg);font-family:'Noto Sans TC',sans-serif;color:var(--text);overflow:hidden}
+  #root{height:100%;display:flex;flex-direction:column;align-items:center;overflow:hidden}
+
+  /* scrollbar */
+  ::-webkit-scrollbar{width:4px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:4px}
+
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes ripple{0%{transform:scale(0.85);opacity:1}100%{transform:scale(1.6);opacity:0}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes countdownStroke{from{stroke-dashoffset:502}to{stroke-dashoffset:0}}
+
+  .anim-fadeIn{animation:fadeIn .3s ease both}
+  .anim-slideUp{animation:slideUp .35s ease both}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+// ── Design tokens ──
+const C = {
+  bg:'#0a0d14', surface:'#111520', card:'#161c2a', card2:'#1a2133',
+  border:'rgba(255,255,255,0.07)', border2:'rgba(255,255,255,0.12)',
+  amber:'#f59e0b', amberGlow:'rgba(245,158,11,0.12)', amberDim:'rgba(245,158,11,0.3)',
+  teal:'#14b8a6', tealGlow:'rgba(20,184,166,0.1)', tealDim:'rgba(20,184,166,0.3)',
+  red:'#ef4444', redGlow:'rgba(239,68,68,0.15)', redDim:'rgba(239,68,68,0.3)',
+  green:'#22c55e', greenGlow:'rgba(34,197,94,0.12)', greenDim:'rgba(34,197,94,0.3)',
+  blue:'#3b82f6',
+  text:'#e2e8f0', text2:'#94a3b8', text3:'#4b5e78',
+};
+
+// ── Phone Shell ──
+function PhoneShell({ children, style }) {
+  return (
+    <div style={{
+      width:375, height:'min(720px,100%)', borderRadius:44, overflow:'hidden',
+      background:'#0d1117', border:'2px solid rgba(255,255,255,0.1)',
+      boxShadow:'0 40px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(0,0,0,0.3)',
+      display:'flex', flexDirection:'column', position:'relative', flexShrink:0,
+      ...style
+    }}>
+      {/* notch */}
+      <div style={{height:28,background:'#0a0c10',display:'flex',alignItems:'center',justifyContent:'space-between',padding:'0 22px',flexShrink:0,zIndex:50}}>
+        <span style={{fontSize:12,fontWeight:500,color:'rgba(255,255,255,0.7)',fontVariantNumeric:'tabular-nums'}}>
+          {new Date().getHours().toString().padStart(2,'0')}:{new Date().getMinutes().toString().padStart(2,'0')}
+        </span>
+        <div style={{display:'flex',gap:6,alignItems:'center'}}>
+          <svg width="16" height="11" viewBox="0 0 16 11" fill="rgba(255,255,255,0.6)"><rect x="0" y="7" width="3" height="4" rx="0.6"/><rect x="4.5" y="4.5" width="3" height="6.5" rx="0.6"/><rect x="9" y="2" width="3" height="9" rx="0.6"/><rect x="13.5" y="0" width="2.5" height="11" rx="0.6"/></svg>
+          <svg width="14" height="11" viewBox="0 0 14 11"><path d="M7 2.5C9 2.5 10.7 3.3 12 4.5L13 3.3C11.4 1.8 9.3 1 7 1C4.7 1 2.6 1.8 1 3.3L2 4.5C3.3 3.3 5 2.5 7 2.5z" fill="rgba(255,255,255,0.6)"/><path d="M7 5.5C8.3 5.5 9.4 6 10.2 6.9L11.2 5.7C10.1 4.6 8.6 4 7 4C5.4 4 3.9 4.6 2.8 5.7L3.8 6.9C4.6 6 5.7 5.5 7 5.5z" fill="rgba(255,255,255,0.6)"/><circle cx="7" cy="9.5" r="1.5" fill="rgba(255,255,255,0.6)"/></svg>
+          <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0.5" y="0.5" width="21" height="11" rx="3.5" stroke="rgba(255,255,255,0.4)" fill="none"/><rect x="2" y="2" width="17" height="8" rx="2" fill="rgba(255,255,255,0.7)"/><path d="M23 4V8C23.8 7.7 24.5 6.8 24.5 6C24.5 5.2 23.8 4.3 23 4Z" fill="rgba(255,255,255,0.4)"/></svg>
+        </div>
+      </div>
+      {/* content */}
+      <div style={{flex:1,overflow:'hidden',display:'flex',flexDirection:'column',minHeight:0}}>
+        {children}
+      </div>
+      {/* home indicator */}
+      <div style={{position:'absolute',bottom:0,left:0,right:0,height:28,display:'flex',justifyContent:'center',alignItems:'flex-end',paddingBottom:7,pointerEvents:'none',zIndex:100}}>
+        <div style={{width:120,height:4,borderRadius:4,background:'rgba(255,255,255,0.25)'}}/>
+      </div>
+    </div>
+  );
+}
+
+// ── Icon helpers ──
+const Icon = {
+  home: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+  bell: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>,
+  pill: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.5 20H4a2 2 0 01-2-2V5c0-1.1.9-2 2-2h3.93a2 2 0 011.66.9l.82 1.2a2 2 0 001.66.9H20a2 2 0 012 2v3"/><path d="M17.5 21.5a5 5 0 100-10 5 5 0 000 10z"/><path d="M14.5 18.5l6-6"/></svg>,
+  settings: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>,
+  check: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+  chevRight: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>,
+  heart: <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>,
+  phone: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.35 10.5 19.79 19.79 0 01.27 2.18 2 2 0 012.24 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.72 6.72l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>,
+  activity: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
+  clock: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+  x: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+  plus: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+  map: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>,
+  user: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+};
+
+// ═══════════════════════════════════
+// CAREGIVER SIDE
+// ═══════════════════════════════════
+
+// ─── Dashboard Screen ───
+function DashboardScreen({ onSOS, onCall, onMap, tweaks, goTo }) {
+  const [meds, setMeds] = useState([
+    { id:1, name:'降血壓藥', time:'08:00', done:true },
+    { id:2, name:'維他命 D', time:'12:00', done:true },
+    { id:3, name:'安眠藥', time:'21:00', done:false },
+  ]);
+  const [showNotifPop, setShowNotifPop] = useState(false);
+
+  const toggleMed = id => setMeds(m => m.map(x => x.id===id ? {...x,done:!x.done} : x));
+
+  // Notifications preview data (for bell popover)
+  const notifStatus = tweaks?.reportStatus || 'ok';
+  const allNotifs = [
+    notifStatus==='critical' && { id:'c1', type:'sos',    icon:'🚨', title:'SOS 緊急通報', body:'媽媽觸發了緊急按鈕', time:'3 分鐘前' },
+    notifStatus!=='ok' &&       { id:'w1', type:'warn',   icon:'⚠️',  title:'今日尚未回報',   body:'媽媽還沒按「我很好」',     time:'13:12 起' },
+    { id:'n1', type:'med',    icon:'💊', title:'藥物未服用',     body:'安眠藥 21:00 尚未確認',     time:'30 分鐘前' },
+    { id:'n2', type:'health', icon:'🩺', title:'血壓更新',         body:'126/82 mmHg，在正常範圍',      time:'今日 09:12' },
+    { id:'n3', type:'ok',     icon:'✅',   title:'每日回報完成',     body:'媽媽已按「我很好」',       time:'今日 09:12' },
+  ].filter(Boolean);
+  const dashNotifUnread = notifStatus==='critical' ? allNotifs.length : Math.min(3, allNotifs.length);
+
+  // reportStatus: 'ok' | 'warning' | 'critical'
+  const reportStatus = tweaks?.reportStatus || 'ok';
+
+  const activities = reportStatus === 'ok'
+    ? [
+        { color:C.green, text:<>媽媽回報「<strong>我很好</strong>」</>, time:'今天 09:12' },
+        { color:C.amber, text:<>晚上藥物<strong>尚未服用</strong></>, time:'今天 21:00' },
+        { color:C.blue,  text:<>健康數值已更新：血壓 <strong>126/82</strong></>, time:'昨天 19:05' },
+        { color:C.teal,  text:<>共享照片：<strong>3 張新相片</strong></>, time:'昨天 15:30' },
+      ]
+    : reportStatus === 'warning'
+    ? [
+        { color:C.amber, text:<><strong>尚未回報</strong>，距離上次回報已超過 4 小時</>, time:'今天 13:12' },
+        { color:C.amber, text:<>晚上藥物<strong>尚未服用</strong></>, time:'今天 21:00' },
+        { color:C.green, text:<>媽媽昨天回報「<strong>我很好</strong>」</>, time:'昨天 09:08' },
+        { color:C.blue,  text:<>健康數值已更新：血壓 <strong>132/85</strong></>, time:'昨天 19:05' },
+      ]
+    : [
+        { color:C.red,   text:<><strong>⚠️ 超過 24 小時未回報</strong>，請立即聯繫！</>, time:'今天 09:00' },
+        { color:C.amber, text:<>藥物今日<strong>全部未服用</strong></>, time:'今天 21:00' },
+        { color:C.red,   text:<><strong>昨天也未回報</strong>，連續兩天無消息</>, time:'昨天 09:00' },
+        { color:C.text3, text:<>前天回報「我很好」</>, time:'前天 09:15' },
+      ];
+
+  const accentColor = tweaks?.accentColor || C.teal;
+
+  // Status badge config per state
+  const statusBadge = {
+    ok:       { bg:'rgba(20,184,166,0.12)', border:C.tealDim,  dot:C.teal,  color:C.teal,  label:'我很好',       sub:'今天 09:12 回報' },
+    warning:  { bg:'rgba(245,158,11,0.12)', border:C.amberDim, dot:C.amber, color:C.amber, label:'尚未回報',     sub:'超過 4 小時未回報' },
+    critical: { bg:'rgba(239,68,68,0.12)',  border:C.redDim,   dot:C.red,   color:C.red,   label:'⚠️ 失聯警示', sub:'超過 24 小時未回報' },
+  }[reportStatus];
+
+  const elderCardBorder = reportStatus==='critical' ? C.red : reportStatus==='warning' ? C.amber : C.border2;
+
+  return (
+    <div style={{flex:1,overflowY:'auto',paddingBottom:80,position:'relative'}}>
+      {/* ── CRITICAL ALERT BANNER ── */}
+      {reportStatus==='critical' && (
+        <div className="anim-slideUp" style={{background:'rgba(239,68,68,0.12)',borderBottom:`0.5px solid rgba(239,68,68,0.35)`,padding:'10px 16px',display:'flex',alignItems:'center',gap:10}}>
+          <div style={{width:8,height:8,borderRadius:'50%',background:C.red,flexShrink:0,animation:'pulse 1s infinite',boxShadow:`0 0 8px ${C.red}`}}/>
+          <div style={{flex:1}}>
+            <div style={{fontSize:13,fontWeight:700,color:C.red}}>媽媽超過 24 小時未回報</div>
+            <div style={{fontSize:11,color:'rgba(239,68,68,0.65)',marginTop:1}}>請立即致電或前往確認狀況</div>
+          </div>
+          <button onClick={onSOS} style={{padding:'6px 14px',borderRadius:8,background:C.red,border:'none',color:'#fff',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif',flexShrink:0}}>立即聯絡</button>
+        </div>
+      )}
+
+      {/* ── WARNING BANNER ── */}
+      {reportStatus==='warning' && (
+        <div className="anim-slideUp" style={{background:'rgba(245,158,11,0.1)',borderBottom:`0.5px solid rgba(245,158,11,0.28)`,padding:'9px 16px',display:'flex',alignItems:'center',gap:10}}>
+          <div style={{width:8,height:8,borderRadius:'50%',background:C.amber,flexShrink:0,animation:'pulse 1.5s infinite'}}/>
+          <div style={{flex:1,fontSize:12,color:'#fbbf24'}}>媽媽今天尚未按下「我很好」</div>
+          <span style={{fontSize:11,color:'rgba(245,158,11,0.55)'}}>13:12 起</span>
+        </div>
+      )}
+
+      {/* header */}
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'14px 16px 10px'}}>
+        <div style={{fontFamily:'Syne,sans-serif',fontSize:20,fontWeight:700,color:C.amber}}>
+          Care<span style={{color:C.text,fontWeight:500}}>Link</span>
+        </div>
+        <div style={{display:'flex',gap:10,alignItems:'center'}}>
+          <div onClick={()=>setShowNotifPop(v=>!v)} style={{width:34,height:34,background:reportStatus==='critical'?'rgba(239,68,68,0.15)':showNotifPop?C.amberGlow:C.card,border:`0.5px solid ${reportStatus==='critical'?C.redDim:showNotifPop?C.amberDim:C.border}`,borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',position:'relative',color:reportStatus==='critical'?C.red:showNotifPop?C.amber:C.text2,transition:'all .15s'}}>
+            {Icon.bell}
+            <div style={{position:'absolute',top:4,right:4,minWidth:13,height:13,background:reportStatus==='critical'?C.red:C.amber,borderRadius:7,display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:700,color:'#000',padding:'0 3px',animation:reportStatus==='critical'?'pulse 1s infinite':undefined}}>{dashNotifUnread}</div>
+          </div>
+          <div style={{width:34,height:34,background:C.amberGlow,border:`1.5px solid ${C.amber}40`,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:600,color:C.amber}}>志</div>
+        </div>
+      </div>
+
+      {/* ── Notification popover ── */}
+      {showNotifPop && (
+        <>
+          <div onClick={()=>setShowNotifPop(false)} style={{position:'absolute',inset:0,zIndex:60}}/>
+          <div className="anim-slideUp" style={{position:'absolute',top:52,right:10,width:300,maxHeight:'70%',background:'rgba(16,22,34,0.98)',backdropFilter:'blur(16px)',border:`0.5px solid ${C.border2}`,borderRadius:14,boxShadow:'0 12px 32px rgba(0,0,0,0.55)',zIndex:70,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+            {/* arrow */}
+            <div style={{position:'absolute',top:-6,right:18,width:12,height:12,background:'rgba(16,22,34,0.98)',borderLeft:`0.5px solid ${C.border2}`,borderTop:`0.5px solid ${C.border2}`,transform:'rotate(45deg)'}}/>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 14px 8px',borderBottom:`0.5px solid ${C.border}`}}>
+              <div style={{display:'flex',alignItems:'center',gap:8}}>
+                <span style={{fontSize:13,fontWeight:700,color:C.text}}>最新通知</span>
+                <span style={{fontSize:10,background:C.amberGlow,border:`0.5px solid ${C.amberDim}`,borderRadius:8,padding:'1px 6px',color:C.amber,fontWeight:700}}>{dashNotifUnread}</span>
+              </div>
+              <button onClick={()=>setShowNotifPop(false)} style={{background:'none',border:'none',color:C.text3,cursor:'pointer',padding:2,display:'flex'}}>{Icon.x}</button>
+            </div>
+            <div style={{flex:1,overflowY:'auto',padding:'6px 8px'}}>
+              {allNotifs.slice(0,4).map(n=>{
+                const tcol = {sos:C.red,warn:C.amber,med:C.amber,health:C.blue,ok:C.green}[n.type];
+                const tbg  = {sos:'rgba(239,68,68,0.1)',warn:'rgba(245,158,11,0.08)',med:'rgba(245,158,11,0.08)',health:'rgba(59,130,246,0.08)',ok:'rgba(34,197,94,0.07)'}[n.type];
+                return (
+                  <div key={n.id} onClick={()=>{setShowNotifPop(false);goTo&&goTo('notifications');}} style={{display:'flex',gap:10,alignItems:'flex-start',padding:'10px 8px',borderRadius:10,cursor:'pointer',background:tbg,marginBottom:4,border:`0.5px solid ${tcol}22`,transition:'background .15s'}}>
+                    <div style={{width:26,height:26,borderRadius:8,background:`${tcol}22`,border:`0.5px solid ${tcol}44`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,flexShrink:0}}>{n.icon}</div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:12,fontWeight:600,color:C.text,marginBottom:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{n.title}</div>
+                      <div style={{fontSize:11,color:C.text2,lineHeight:1.4,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{n.body}</div>
+                      <div style={{fontSize:10,color:C.text3,marginTop:3}}>{n.time}</div>
+                    </div>
+                    {n.type==='sos' && <div style={{width:6,height:6,borderRadius:'50%',background:C.red,marginTop:10,boxShadow:`0 0 6px ${C.red}`,animation:'pulse 1s infinite'}}/>}
+                  </div>
+                );
+              })}
+            </div>
+            <button onClick={()=>{setShowNotifPop(false);goTo&&goTo('notifications');}} style={{padding:'11px',background:'rgba(245,158,11,0.1)',border:'none',borderTop:`0.5px solid ${C.border}`,color:C.amber,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+              查看全部通知 →
+            </button>
+          </div>
+        </>
+      )}
+
+      <div style={{padding:'0 16px',display:'flex',flexDirection:'column',gap:14}}>
+        {/* elder status card */}
+        <div style={{background:C.card,border:`0.5px solid ${elderCardBorder}`,borderRadius:16,padding:16,position:'relative',overflow:'hidden',transition:'border-color .3s'}}>
+          {/* glow bg */}
+          <div style={{position:'absolute',top:0,right:0,width:160,height:160,background:reportStatus==='critical'?'rgba(239,68,68,0.07)':reportStatus==='warning'?'rgba(245,158,11,0.07)':'rgba(20,184,166,0.07)',borderRadius:'50%',transform:'translate(50px,-50px)',pointerEvents:'none',transition:'background .3s'}}/>
+
+          <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:14}}>
+            <div style={{width:46,height:46,borderRadius:'50%',background:reportStatus==='critical'?'rgba(239,68,68,0.1)':reportStatus==='warning'?C.amberGlow:C.tealGlow,border:`1.5px solid ${statusBadge.border}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0,transition:'all .3s'}}>
+              {reportStatus==='critical'?'😰':reportStatus==='warning'?'🤔':'👵'}
+            </div>
+            <div>
+              <div style={{fontSize:15,fontWeight:600}}>媽媽</div>
+              <div style={{fontSize:11,color:C.text2,marginTop:2}}>張秀蘭・75 歲</div>
+            </div>
+            <div style={{marginLeft:'auto',display:'flex',flexDirection:'column',alignItems:'flex-end',gap:3}}>
+              <div style={{display:'flex',alignItems:'center',gap:6,background:statusBadge.bg,border:`0.5px solid ${statusBadge.border}`,borderRadius:20,padding:'5px 12px',fontSize:12,color:statusBadge.color,transition:'all .3s'}}>
+                <div style={{width:7,height:7,background:statusBadge.dot,borderRadius:'50%',animation:'pulse 2s infinite'}}/>
+                {statusBadge.label}
+              </div>
+              <div style={{fontSize:10,color:C.text3,paddingRight:4}}>{statusBadge.sub}</div>
+            </div>
+          </div>
+
+          <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>
+            {[
+              {label:'回報時間', value: reportStatus==='ok'?'09:12': reportStatus==='warning'?'昨天':'—', color: reportStatus==='ok'?C.text:reportStatus==='warning'?C.amber:C.red },
+              {label:'今日步數', value: reportStatus==='critical'?'—':'2,341', color: reportStatus==='critical'?C.text3:C.green },
+              {label:'服藥狀況', value: reportStatus==='critical'?'0/3':reportStatus==='warning'?'1/3':'2/3', color: reportStatus==='critical'?C.red:C.amber },
+            ].map(s=>(
+              <div key={s.label} style={{background:C.card2,border:`0.5px solid ${C.border}`,borderRadius:10,padding:'9px 10px'}}>
+                <div style={{fontSize:10,color:C.text3,marginBottom:3,letterSpacing:.5}}>{s.label}</div>
+                <div style={{fontSize:15,fontWeight:500,color:s.color}}>{s.value}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{marginTop:12,display:'flex',gap:8}}>
+            <button onClick={onCall} style={{flex:1,padding:'9px 0',borderRadius:10,border:`0.5px solid ${accentColor}40`,background:`${accentColor}10`,color:accentColor,fontSize:13,fontWeight:500,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+              {Icon.phone} 撥打電話
+            </button>
+            <button onClick={onMap} style={{flex:1,padding:'9px 0',borderRadius:10,border:`0.5px solid ${C.border}`,background:C.card2,color:C.text2,fontSize:13,fontWeight:500,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+              {Icon.map} 查看位置
+            </button>
+          </div>
+        </div>
+
+        {/* SOS alert */}
+        <div style={{background:C.card,border:`0.5px solid ${C.redDim}`,borderRadius:14,padding:'14px 16px'}}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+            <div>
+              <div style={{fontSize:13,fontWeight:600,marginBottom:3}}>緊急聯絡</div>
+              <div style={{fontSize:11,color:C.text2}}>長壓 SOS 按鈕即觸發緊急通報</div>
+            </div>
+            <button onClick={onSOS} style={{padding:'9px 18px',borderRadius:10,background:C.redGlow,border:`0.5px solid ${C.redDim}`,color:C.red,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif',letterSpacing:1}}>
+              SOS 測試
+            </button>
+          </div>
+        </div>
+
+        {/* medication */}
+        <div style={{background:C.card,border:`0.5px solid ${C.border}`,borderRadius:14,padding:'14px 16px'}}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
+            <span style={{fontSize:11,fontWeight:500,color:C.text3,letterSpacing:1.5,textTransform:'uppercase'}}>今日用藥</span>
+            <span style={{fontSize:11,color:C.amber}}>2/3 完成</span>
+          </div>
+          {meds.map((m,i)=>(
+            <div key={m.id} style={{display:'flex',alignItems:'center',gap:10,padding:'9px 0',borderBottom:i<meds.length-1?`0.5px solid ${C.border}`:'none'}}>
+              <div style={{width:32,height:32,background:C.amberGlow,borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:16}}>💊</div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:13,fontWeight:500}}>{m.name}</div>
+                <div style={{fontSize:11,color:C.text2,marginTop:2}}>{m.time}</div>
+              </div>
+              <button onClick={()=>toggleMed(m.id)} style={{width:24,height:24,borderRadius:6,display:'flex',alignItems:'center',justifyContent:'center',border:'none',cursor:'pointer',background:m.done?'rgba(34,197,94,0.12)':C.card2,color:m.done?C.green:C.text3,outline:m.done?`0.5px solid ${C.greenDim}`:`0.5px solid ${C.border2}`}}>
+                {m.done && Icon.check}
+              </button>
+            </div>
+          ))}
+        </div>
+
+        {/* activity */}
+        <div style={{background:C.card,border:`0.5px solid ${C.border}`,borderRadius:14,padding:'14px 16px'}}>
+          <div style={{fontSize:11,fontWeight:500,color:C.text3,letterSpacing:1.5,textTransform:'uppercase',marginBottom:12}}>活動紀錄</div>
+          {activities.map((a,i)=>(
+            <div key={i} style={{display:'flex',alignItems:'flex-start',gap:10,padding:'8px 0',borderBottom:i<activities.length-1?`0.5px solid ${C.border}`:'none'}}>
+              <div style={{width:8,height:8,borderRadius:'50%',background:a.color,marginTop:5,flexShrink:0}}/>
+              <div style={{flex:1,fontSize:12,color:C.text2,lineHeight:1.5}}>{a.text}</div>
+              <div style={{fontSize:11,color:C.text3,whiteSpace:'nowrap'}}>{a.time}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* health snapshot */}
+        <div style={{background:C.card,border:`0.5px solid ${C.border}`,borderRadius:14,padding:'14px 16px'}}>
+          <div style={{fontSize:11,fontWeight:500,color:C.text3,letterSpacing:1.5,textTransform:'uppercase',marginBottom:12}}>健康數值</div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+            {[
+              {label:'血壓',value:'126 / 82',unit:'mmHg',color:C.green,icon:'🩺'},
+              {label:'血糖',value:'98',unit:'mg/dL',color:C.teal,icon:'🩸'},
+              {label:'體重',value:'58.5',unit:'kg',color:C.text2,icon:'⚖️'},
+              {label:'體溫',value:'36.5',unit:'°C',color:C.amber,icon:'🌡️'},
+            ].map(h=>(
+              <div key={h.label} style={{background:C.card2,border:`0.5px solid ${C.border}`,borderRadius:10,padding:'10px 12px'}}>
+                <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:6}}>
+                  <span style={{fontSize:14}}>{h.icon}</span>
+                  <span style={{fontSize:10,color:C.text3,letterSpacing:.5}}>{h.label}</span>
+                </div>
+                <div style={{fontSize:18,fontWeight:600,color:h.color}}>{h.value}</div>
+                <div style={{fontSize:10,color:C.text3,marginTop:2}}>{h.unit}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Notification Detail Overlay ───
+function NotifDetail({ notif, onClose }) {
+  const typeColor = { sos:[C.red,C.redGlow,C.redDim], med:[C.amber,C.amberGlow,C.amberDim], ok:[C.green,C.greenGlow,C.greenDim], health:[C.blue,'rgba(59,130,246,0.1)','rgba(59,130,246,0.28)'] };
+  const [c,bg,bd] = typeColor[notif.type]||[C.text2,C.card,C.border];
+
+  const details = {
+    sos:  { icon:'🚨', desc:'媽媽於今天 21:32 觸發了 SOS 緊急按鈕。\n系統已自動通知大哥志明及二姊美玲。\n若情況嚴重請直接撥打 119。', actions:[{label:'📞 立即撥打',color:C.red},{label:'查看位置',color:C.text2}] },
+    med:  { icon:'💊', desc:'安眠藥（每天 21:00）今天尚未確認服用。\n\n距離提醒時間已過 30 分鐘。請確認長輩是否已服藥，或協助更新紀錄。', actions:[{label:'標記為已服用',color:C.green},{label:'延後提醒 1 小時',color:C.amber}] },
+    ok:   { icon:'😊', desc:'媽媽於今天 09:12 按下了「我很好」按鈕，成功完成今日回報。\n\n連續回報天數：14 天 🎉', actions:[{label:'回覆留言',color:C.teal}] },
+    health:{ icon:'📊', desc:'媽媽於昨天 19:05 更新了健康數值。\n\n血壓：126 / 82 mmHg（正常）\n血糖：5.8 mmol/L（正常）\n體溫：36.5°C', actions:[{label:'查看完整紀錄',color:C.blue}] },
+  };
+  const d = details[notif.type] || { icon:'🔔', desc:notif.body, actions:[] };
+
+  return (
+    <div className="anim-fadeIn" style={{position:'absolute',inset:0,background:C.bg,display:'flex',flexDirection:'column',zIndex:150,overflowY:'auto'}}>
+      {/* header */}
+      <div style={{display:'flex',alignItems:'center',gap:12,padding:'14px 16px',borderBottom:`0.5px solid ${C.border}`,flexShrink:0}}>
+        <button onClick={onClose} style={{width:32,height:32,borderRadius:8,background:C.card,border:`0.5px solid ${C.border}`,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:C.text2,flexShrink:0}}>{Icon.x}</button>
+        <span style={{fontSize:15,fontWeight:700,flex:1}}>通知詳情</span>
+        <span style={{fontSize:11,color:C.text3}}>{notif.time}</span>
+      </div>
+
+      <div style={{padding:'20px 16px',display:'flex',flexDirection:'column',gap:16,paddingBottom:32}}>
+        {/* type badge + title */}
+        <div style={{display:'flex',alignItems:'center',gap:14}}>
+          <div style={{width:52,height:52,borderRadius:14,background:bg,border:`0.5px solid ${bd}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:24,flexShrink:0}}>{d.icon}</div>
+          <div>
+            <div style={{fontSize:16,fontWeight:700,marginBottom:4}}>{notif.title}</div>
+            <div style={{display:'flex',alignItems:'center',gap:5,background:bg,border:`0.5px solid ${bd}`,borderRadius:20,padding:'3px 10px',width:'fit-content'}}>
+              <div style={{width:6,height:6,background:c,borderRadius:'50%'}}/>
+              <span style={{fontSize:11,color:c}}>
+                {{sos:'緊急',med:'藥物',ok:'回報',health:'健康'}[notif.type]||'通知'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* body */}
+        <div style={{background:C.card,border:`0.5px solid ${C.border}`,borderRadius:14,padding:'14px 16px'}}>
+          <div style={{fontSize:13,color:C.text2,lineHeight:1.8,whiteSpace:'pre-line'}}>{d.desc}</div>
+        </div>
+
+        {/* meta */}
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+          {[{label:'通知時間',val:notif.time},{label:'對象',val:'媽媽・張秀蘭'},{label:'裝置',val:'媽媽的 iPhone'},{label:'狀態',val:'已送達'}].map(m=>(
+            <div key={m.label} style={{background:C.card2,border:`0.5px solid ${C.border}`,borderRadius:10,padding:'9px 11px'}}>
+              <div style={{fontSize:10,color:C.text3,marginBottom:3,letterSpacing:.5}}>{m.label}</div>
+              <div style={{fontSize:12,fontWeight:500}}>{m.val}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* actions */}
+        {d.actions.length>0 && (
+          <div style={{display:'flex',flexDirection:'column',gap:8}}>
+            {d.actions.map((a,i)=>(
+              <button key={i} style={{padding:'13px',borderRadius:12,background:`${a.color}12`,border:`0.5px solid ${a.color}35`,color:a.color,fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif',textAlign:'center'}}>{a.label}</button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Notifications Screen ───
+function NotificationsScreen() {
+  const [dismissed, setDismissed] = useState([]);
+  const [selected, setSelected] = useState(null);
+
+  const notifs = [
+    { id:1, type:'sos',    title:'⚠️ SOS 緊急通報',    body:'媽媽觸發了緊急按鈕，請立即聯繫！',       time:'3分鐘前',    urgent:true  },
+    { id:2, type:'med',    title:'💊 藥物未服用提醒',   body:'安眠藥（21:00）尚未確認服用。',          time:'30分鐘前',   urgent:false },
+    { id:3, type:'ok',     title:'✅ 每日回報',          body:'媽媽已完成今日「我很好」回報。',          time:'今天 09:12', urgent:false },
+    { id:4, type:'health', title:'📊 健康數值更新',      body:'血壓 126/82 — 在正常範圍內。',            time:'昨天 19:05', urgent:false },
+    { id:5, type:'ok',     title:'✅ 每日回報',          body:'媽媽已完成每日回報。',                    time:'昨天 09:08', urgent:false },
+    { id:6, type:'med',    title:'💊 藥物服用完成',      body:'降血壓藥與維他命 D 均已服用。',           time:'昨天 08:15', urgent:false },
+  ];
+
+  const typeColor = {
+    sos:   [C.red,   'rgba(239,68,68,0.12)',  'rgba(239,68,68,0.25)'],
+    med:   [C.amber, 'rgba(245,158,11,0.1)',  'rgba(245,158,11,0.25)'],
+    ok:    [C.green, 'rgba(34,197,94,0.1)',   'rgba(34,197,94,0.22)'],
+    health:[C.blue,  'rgba(59,130,246,0.1)',  'rgba(59,130,246,0.25)'],
+  };
+
+  const visible = notifs.filter(n=>!dismissed.includes(n.id));
+  const selNotif = notifs.find(n=>n.id===selected);
+
+  return (
+    <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden',position:'relative'}}>
+      <div style={{flex:1,overflowY:'auto',paddingBottom:80}}>
+        <div style={{padding:'14px 16px 6px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+          <span style={{fontSize:18,fontWeight:700}}>通知中心</span>
+          <button onClick={()=>setDismissed(notifs.map(n=>n.id))} style={{fontSize:12,color:C.amber,background:'none',border:'none',cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif'}}>全部清除</button>
+        </div>
+        <div style={{padding:'4px 16px 0',display:'flex',flexDirection:'column',gap:8}}>
+          {visible.map(n=>{
+            const [c,bg,border] = typeColor[n.type]||[C.text2,C.card,C.border];
+            return (
+              <div key={n.id} onClick={()=>setSelected(n.id)} className="anim-fadeIn"
+                style={{background:bg,border:`0.5px solid ${border}`,borderRadius:14,padding:'13px 14px',display:'flex',gap:12,alignItems:'flex-start',position:'relative',cursor:'pointer',transition:'filter .15s'}}
+              >
+                {n.urgent && <div style={{position:'absolute',inset:0,borderRadius:14,border:`1.5px solid ${C.red}`,pointerEvents:'none',animation:'pulse 2s infinite'}}/>}
+                <div style={{width:8,height:8,borderRadius:'50%',background:c,flexShrink:0,marginTop:5,boxShadow:`0 0 6px ${c}`}}/>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:13,fontWeight:600,marginBottom:3}}>{n.title}</div>
+                  <div style={{fontSize:12,color:C.text2,lineHeight:1.5}}>{n.body}</div>
+                  <div style={{fontSize:11,color:C.text3,marginTop:5,display:'flex',alignItems:'center',gap:4}}>{Icon.clock}{n.time}</div>
+                </div>
+                <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:8,flexShrink:0}}>
+                  <button onClick={e=>{e.stopPropagation();setDismissed(d=>[...d,n.id]);}} style={{color:C.text3,background:'none',border:'none',cursor:'pointer',padding:2,display:'flex',alignItems:'center'}}>{Icon.x}</button>
+                  <span style={{color:C.text3,opacity:.6}}>{Icon.chevRight}</span>
+                </div>
+              </div>
+            );
+          })}
+          {visible.length===0 && (
+            <div style={{textAlign:'center',padding:'48px 0 20px',display:'flex',flexDirection:'column',alignItems:'center',gap:12}}>
+              <div style={{fontSize:40}}>📭</div>
+              <div style={{fontSize:13,color:C.text3}}>沒有新通知</div>
+            </div>
+          )}
+        </div>
+      </div>
+      {selNotif && <NotifDetail notif={selNotif} onClose={()=>setSelected(null)}/>}
+    </div>
+  );
+}
+
+// ─── Medications Screen ───
+function MedicationsScreen() {
+  const today = new Date();
+  const todayIdx = today.getDay();
+  const [selIdx, setSelIdx] = useState(todayIdx);
+  const [expanded, setExpanded] = useState(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newDose, setNewDose] = useState('1 顆');
+  const [newTime, setNewTime2] = useState('08:00');
+  const [newNote3, setNewNote3] = useState('');
+  const [newColor, setNewColor] = useState('#f59e0b');
+
+  const days = ['日','一','二','三','四','五','六'];
+
+  // Fake per-day compliance data
+  const dayData = {
+    [todayIdx]:    [{done:true},{done:true},{done:false},{done:true,done2:false}],
+    [(todayIdx+6)%7]: [{done:true},{done:true},{done:true},{done:true,done2:true}],
+    [(todayIdx+5)%7]: [{done:true},{done:false},{done:true},{done:true,done2:false}],
+    [(todayIdx+4)%7]: [{done:false},{done:true},{done:true},{done:true,done2:true}],
+    [(todayIdx+3)%7]: [{done:true},{done:true},{done:true},{done:true,done2:true}],
+    [(todayIdx+2)%7]: [{done:true},{done:true},{done:false},{done:true,done2:false}],
+    [(todayIdx+1)%7]: [{done:true},{done:true},{done:true},{done:true,done2:true}],
+  };
+
+  const [meds, setMeds] = useState([
+    {id:1,name:'降血壓藥（脈優錠）',dose:'1 顆',slots:[{time:'08:00',meal:'早餐後',on:true}],note:'飯後服用，勿空腹。若有頭暈感請告知醫師。',color:'#a855f7',active:true},
+    {id:2,name:'鈣片',dose:'2 顆',slots:[{time:'08:30',meal:'早餐後・1 顆',on:true},{time:'12:30',meal:'午餐後・1 顆',on:true}],note:'飯中服用，搭配充足水分。',color:C.blue,active:true},
+    {id:3,name:'Metformin 二甲雙胍',dose:'500mg',slots:[{time:'08:00',meal:'早餐後・500mg',on:true},{time:'12:00',meal:'午餐後・500mg',on:true},{time:'18:00',meal:'晚餐後・500mg',on:true}],note:'飯後服用，與食物同服可減少腸胃不適。',color:C.teal,active:true,missedToday:true},
+    {id:4,name:'阿斯匹靈',dose:'1 顆',slots:[{time:'21:00',meal:'睡前',on:true}],note:'手術前停藥，預計 5/10 後恢復。',color:C.text3,active:false,pauseReason:'手術前停藥，預計 5/10 後恢復'},
+  ]);
+
+  const curData = dayData[selIdx] || meds.map(()=>({done:false}));
+  const doneCount = curData.filter(d=>d.done).length + curData.filter(d=>d.done2).length;
+  const totalDoses = meds.filter(m=>m.active).reduce((s,m)=>s+m.slots.filter(x=>x.on).length,0);
+  const activeCount = meds.filter(m=>m.active).length;
+  const compliance = Math.round((doneCount/Math.max(1,totalDoses))*100);
+  const missedCount = meds.filter(m=>m.missedToday && m.active).length;
+
+  const delMed = id => setMeds(m=>m.filter(x=>x.id!==id));
+  const toggleActive = id => setMeds(m=>m.map(x=>x.id===id?{...x,active:!x.active}:x));
+  const toggleSlot = (mid,si) => setMeds(ms=>ms.map(m=>m.id===mid?{...m,slots:m.slots.map((s,i)=>i===si?{...s,on:!s.on}:s)}:m));
+  const delSlot = (mid,si) => setMeds(ms=>ms.map(m=>m.id===mid?{...m,slots:m.slots.filter((_,i)=>i!==si)}:m));
+
+  const addMed = () => {
+    if(!newName) return;
+    setMeds(m=>[...m,{id:Date.now(),name:newName,dose:newDose,slots:[{time:newTime,meal:'早餐後',on:true}],note:newNote3,color:newColor,active:true}]);
+    setShowAddForm(false); setNewName(''); setNewNote3('');
+  };
+
+  const colorOpts = ['#a855f7',C.blue,C.teal,C.amber,C.green,C.red];
+
+  return (
+    <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden',position:'relative'}}>
+      <div style={{flex:1,overflowY:'auto',paddingBottom:80}}>
+        <div style={{padding:'14px 16px 6px',display:'flex',alignItems:'flex-start',justifyContent:'space-between'}}>
+          <div>
+            <div style={{fontSize:18,fontWeight:700}}>服藥管理</div>
+            <div style={{fontSize:11,color:C.text3,marginTop:2}}>張秀蘭・目前 {activeCount} 種藥物</div>
+          </div>
+          <button onClick={()=>setShowAddForm(true)} style={{display:'flex',alignItems:'center',gap:5,background:C.amberGlow,border:`0.5px solid ${C.amberDim}`,borderRadius:8,padding:'6px 11px',color:C.amber,fontSize:12,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif'}}>
+            {Icon.plus} 新增藥物
+          </button>
+        </div>
+
+        {/* missed-today banner */}
+        {missedCount>0 && (
+          <div style={{margin:'6px 16px 10px',padding:'9px 12px',background:'rgba(239,68,68,0.1)',border:`0.5px solid ${C.redDim}`,borderRadius:10,display:'flex',alignItems:'center',gap:8}}>
+            <div style={{width:7,height:7,borderRadius:'50%',background:C.red,flexShrink:0,animation:'pulse 1.5s infinite',boxShadow:`0 0 6px ${C.red}`}}/>
+            <div style={{flex:1,fontSize:12,color:'#fca5a5',lineHeight:1.4}}>今日有 <b style={{color:C.red}}>{missedCount}</b> 種藥物漏服！已超過 2 小時，建議不補服。</div>
+          </div>
+        )}
+
+        {/* summary strip */}
+        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,padding:'0 16px 12px'}}>
+          {[{n:activeCount,l:'目前藥物',c:C.amber},{n:totalDoses,l:'每日提醒次',c:C.green},{n:`${compliance}%`,l:'本週服藥率',c:C.blue}].map(s=>(
+            <div key={s.l} style={{background:C.card2,border:`0.5px solid ${C.border}`,borderRadius:12,padding:'10px 12px',textAlign:'center'}}>
+              <div style={{fontSize:22,fontWeight:700,lineHeight:1,color:s.c}}>{s.n}</div>
+              <div style={{fontSize:10,color:C.text3,marginTop:3}}>{s.l}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* week calendar */}
+        <div style={{padding:'0 16px 12px',display:'flex',gap:5}}>
+          {days.map((d,i)=>{
+            const isToday = i===todayIdx;
+            const isSel = i===selIdx;
+            const dayCompliance = dayData[i] || [];
+            const allDone = dayCompliance.length>0 && dayCompliance.every(x=>x.done);
+            return (
+              <div key={d} onClick={()=>setSelIdx(i)} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:4,padding:'8px 0',borderRadius:10,background:isSel?C.amber:C.card,border:`0.5px solid ${isSel?C.amber:C.border}`,cursor:'pointer',position:'relative',transition:'all .15s'}}>
+                <span style={{fontSize:9,color:isSel?'rgba(0,0,0,0.6)':C.text3,letterSpacing:.3}}>周{d}</span>
+                <span style={{fontSize:13,fontWeight:isSel||isToday?700:400,color:isSel?'#000':C.text}}>
+                  {new Date(Date.now()-(todayIdx-i)*86400000).getDate()}
+                </span>
+                {allDone && !isSel && <div style={{width:5,height:5,borderRadius:'50%',background:C.green}}/>}
+                {isToday && !isSel && <div style={{width:5,height:5,borderRadius:'50%',background:C.blue}}/>}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* med cards */}
+        <div style={{padding:'0 16px',display:'flex',flexDirection:'column',gap:8}}>
+          {meds.map((m,mi)=>{
+            const d = curData[mi]||{done:false};
+            const isOpen = expanded===m.id;
+            const paused = !m.active;
+            const missed = m.missedToday && m.active;
+            const dotBase = {width:18,height:18,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700};
+            // Fake dose status per slot for today (selected day)
+            const slotStatus = (si) => {
+              if(paused) return 'paused';
+              if(missed && si===1) return 'missed';
+              if(si===0) return 'done';
+              if(si>=m.slots.length-1 && selIdx===todayIdx) return 'pending';
+              return 'done';
+            };
+            const borderCol = isOpen ? `${m.color}55` : missed ? C.redDim : C.border;
+            return (
+              <div key={m.id} style={{background:C.card,border:`0.5px solid ${borderCol}`,borderRadius:14,overflow:'hidden',transition:'border-color .2s',opacity:paused?0.55:1}}>
+                {/* card head */}
+                <div onClick={()=>setExpanded(isOpen?null:m.id)} style={{display:'flex',alignItems:'center',gap:10,padding:'12px 14px',cursor:'pointer'}}>
+                  <div style={{width:4,minHeight:44,borderRadius:2,background:paused?C.text3:m.color,flexShrink:0,alignSelf:'stretch'}}/>
+                  <div style={{width:38,height:38,borderRadius:10,background:paused?'rgba(255,255,255,0.04)':`${m.color}18`,border:`0.5px solid ${paused?C.border:`${m.color}40`}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0}}>💊</div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:14,fontWeight:600,color:paused?C.text2:C.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{m.name}{paused && <span style={{fontSize:11,color:C.text3,fontWeight:400}}>（暫停）</span>}</div>
+                    <div style={{fontSize:11,color:C.text2,marginTop:2,display:'flex',alignItems:'center',gap:6}}>
+                      <span style={{background:paused?'rgba(255,255,255,0.06)':C.greenGlow,border:`0.5px solid ${paused?C.border:C.greenDim}`,color:paused?C.text3:C.green,borderRadius:20,padding:'1px 7px',fontSize:10,fontWeight:600}}>{paused?'已暫停':'啟用中'}</span>
+                      <span>{paused?'原：':''}每日 {m.slots.length} 次・{m.slots[0]?.meal?.split('・')[0]||''}</span>
+                    </div>
+                  </div>
+                  <span style={{color:C.text3,fontSize:12,transform:isOpen?'rotate(180deg)':'rotate(0deg)',transition:'transform .2s',flexShrink:0}}>▾</span>
+                </div>
+                {/* expanded */}
+                {isOpen && (
+                  <div style={{borderTop:`0.5px solid ${C.border}`,padding:'12px 14px 14px'}}>
+                    {paused ? (
+                      <div style={{fontSize:12,color:C.text3,padding:'9px 11px',background:C.card2,borderRadius:8}}>
+                        <span style={{color:C.text2,fontWeight:600}}>暫停原因：</span>{m.pauseReason||'—'}
+                      </div>
+                    ) : (
+                      <>
+                        <div style={{fontSize:10,color:C.text3,letterSpacing:1.2,marginBottom:6}}>今日服藥狀況</div>
+                        <div style={{display:'flex',gap:10,marginBottom:12}}>
+                          {m.slots.map((s,si)=>{
+                            const st = slotStatus(si);
+                            const cfg = {
+                              done:   {bg:C.greenGlow,border:C.greenDim,color:C.green,label:'✓'},
+                              missed: {bg:'rgba(239,68,68,0.1)',border:C.redDim,color:C.red,label:'✕'},
+                              pending:{bg:C.card2,border:C.border,color:C.text3,label:'—'},
+                              paused: {bg:C.card2,border:C.border,color:C.text3,label:'—'},
+                            }[st];
+                            const lbl = ['早','中','晚','宵'][si] || `#${si+1}`;
+                            return (
+                              <div key={si} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
+                                <div style={{...dotBase,background:cfg.bg,border:`0.5px solid ${cfg.border}`,color:cfg.color}}>{cfg.label}</div>
+                                <div style={{fontSize:10,color:C.text3}}>{lbl}</div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        {missed && (
+                          <div style={{display:'flex',gap:6,marginBottom:10,padding:'8px 10px',background:'rgba(239,68,68,0.08)',border:`0.5px solid ${C.redDim}`,borderRadius:8}}>
+                            <span style={{fontSize:13,flexShrink:0}}>⚠️</span>
+                            <span style={{fontSize:12,color:'#fca5a5',lineHeight:1.45}}>今日中午漏服！已超過 2 小時，建議不補服。</span>
+                          </div>
+                        )}
+                        <div style={{fontSize:10,color:C.text3,letterSpacing:1.2,marginBottom:6}}>提醒時間</div>
+                        {m.slots.map((s,si)=>(
+                          <div key={si} style={{display:'flex',alignItems:'center',gap:8,background:C.card2,border:`0.5px solid ${C.border}`,borderRadius:8,padding:'8px 10px',marginBottom:6}}>
+                            <span style={{fontSize:14,fontWeight:700,color:C.text,fontFamily:'Syne,sans-serif'}}>{s.time}</span>
+                            <span style={{fontSize:11,color:C.text3,flex:1,marginLeft:6}}>{s.meal}</span>
+                            <div onClick={e=>{e.stopPropagation();toggleSlot(m.id,si);}} style={{width:32,height:18,borderRadius:9,background:s.on?'rgba(34,197,94,0.2)':'rgba(255,255,255,0.08)',border:`0.5px solid ${s.on?C.greenDim:C.border}`,position:'relative',cursor:'pointer',transition:'all .15s'}}>
+                              <div style={{width:14,height:14,borderRadius:'50%',background:s.on?C.green:C.text3,position:'absolute',top:1,left:s.on?16:2,transition:'left .15s'}}/>
+                            </div>
+                            <button onClick={e=>{e.stopPropagation();delSlot(m.id,si);}} style={{width:22,height:22,borderRadius:6,background:'rgba(239,68,68,0.1)',border:`0.5px solid ${C.redDim}`,color:C.red,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,padding:0}}>✕</button>
+                          </div>
+                        ))}
+                      </>
+                    )}
+                    {m.note && !paused && (
+                      <div style={{display:'flex',gap:6,marginTop:8,padding:'8px 10px',background:missed?'rgba(239,68,68,0.05)':'rgba(245,158,11,0.05)',border:`0.5px solid ${missed?C.redDim:C.amberDim}`,borderRadius:8}}>
+                        <span style={{fontSize:14,flexShrink:0}}>ℹ️</span>
+                        <span style={{fontSize:12,color:C.text2,lineHeight:1.5}}>{m.note}</span>
+                      </div>
+                    )}
+                    <div style={{display:'flex',gap:8,marginTop:10,paddingTop:10,borderTop:`0.5px solid ${C.border}`}}>
+                      <button onClick={()=>toggleActive(m.id)} style={{flex:1,padding:'7px',borderRadius:8,background:paused?C.greenGlow:C.amberGlow,border:`0.5px solid ${paused?C.greenDim:C.amberDim}`,color:paused?C.green:C.amber,fontSize:11,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif',display:'flex',alignItems:'center',justifyContent:'center',gap:4}}>
+                        {paused?'▶ 恢復提醒':'❚❚ 暫停提醒'}
+                      </button>
+                      <button onClick={()=>delMed(m.id)} style={{flex:1,padding:'7px',borderRadius:8,background:C.redGlow,border:`0.5px solid ${C.redDim}`,color:C.red,fontSize:11,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif'}}>🗑 刪除</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* add form drawer */}
+      {showAddForm && (
+        <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,0.65)',display:'flex',flexDirection:'column',justifyContent:'flex-end',zIndex:100}} onClick={e=>{if(e.target===e.currentTarget)setShowAddForm(false);}}>
+          <div className="anim-slideUp" style={{background:C.surface,borderRadius:'20px 20px 0 0',border:`0.5px solid ${C.border2}`,padding:'18px 18px 36px',maxHeight:'80%',overflowY:'auto'}}>
+            <div style={{width:36,height:3,background:C.border2,borderRadius:2,margin:'0 auto 14px'}}/>
+            <div style={{fontSize:15,fontWeight:700,marginBottom:14}}>新增藥物</div>
+            <div style={{marginBottom:10}}>
+              <div style={{fontSize:11,color:C.text3,marginBottom:5,letterSpacing:.5}}>藥物名稱 *</div>
+              <input value={newName} onChange={e=>setNewName(e.target.value)} placeholder="例：降血壓藥（脈優錠）" style={{width:'100%',background:C.card2,border:`0.5px solid ${C.border2}`,borderRadius:10,padding:'10px 12px',color:C.text,fontSize:14,fontFamily:'Noto Sans TC,sans-serif',outline:'none'}}/>
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
+              {[['劑量',newDose,setNewDose,'1 顆'],['提醒時間',newTime,setNewTime2,'08:00']].map(([lbl,val,setter,ph])=>(
+                <div key={lbl}>
+                  <div style={{fontSize:11,color:C.text3,marginBottom:5,letterSpacing:.5}}>{lbl}</div>
+                  <input value={val} onChange={e=>setter(e.target.value)} placeholder={ph} style={{width:'100%',background:C.card2,border:`0.5px solid ${C.border2}`,borderRadius:10,padding:'10px 12px',color:C.text,fontSize:13,fontFamily:'Noto Sans TC,sans-serif',outline:'none'}}/>
+                </div>
+              ))}
+            </div>
+            <div style={{marginBottom:10}}>
+              <div style={{fontSize:11,color:C.text3,marginBottom:6,letterSpacing:.5}}>顏色標記</div>
+              <div style={{display:'flex',gap:10}}>
+                {colorOpts.map(c=><button key={c} onClick={()=>setNewColor(c)} style={{width:32,height:32,borderRadius:'50%',background:c,border:newColor===c?'2.5px solid #fff':'2px solid transparent',cursor:'pointer',transition:'all .15s'}}/>)}
+              </div>
+            </div>
+            <div style={{marginBottom:14}}>
+              <div style={{fontSize:11,color:C.text3,marginBottom:5,letterSpacing:.5}}>備註</div>
+              <input value={newNote3} onChange={e=>setNewNote3(e.target.value)} placeholder="例：飯後服用，勿空腹" style={{width:'100%',background:C.card2,border:`0.5px solid ${C.border2}`,borderRadius:10,padding:'10px 12px',color:C.text,fontSize:13,fontFamily:'Noto Sans TC,sans-serif',outline:'none'}}/>
+            </div>
+            <div style={{display:'flex',gap:8}}>
+              <button onClick={()=>setShowAddForm(false)} style={{flex:1,padding:'12px',borderRadius:10,background:C.card2,border:`0.5px solid ${C.border2}`,color:C.text2,fontSize:14,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif'}}>取消</button>
+              <button onClick={addMed} style={{flex:2,padding:'12px',borderRadius:10,background:C.amberGlow,border:`1px solid ${C.amberDim}`,color:C.amber,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif'}}>新增藥物</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Settings Sub-pages ───
+function SettingSubPage({ title, onBack, children }) {
+  return (
+    <div className="anim-fadeIn" style={{position:'absolute',inset:0,background:C.bg,display:'flex',flexDirection:'column',zIndex:150,overflowY:'auto'}}>
+      <div style={{display:'flex',alignItems:'center',gap:12,padding:'14px 16px',borderBottom:`0.5px solid ${C.border}`,flexShrink:0}}>
+        <button onClick={onBack} style={{width:32,height:32,borderRadius:8,background:C.card,border:`0.5px solid ${C.border}`,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:C.text2,flexShrink:0}}>{Icon.x}</button>
+        <span style={{fontSize:15,fontWeight:700}}>{title}</span>
+      </div>
+      <div style={{flex:1,overflowY:'auto',paddingBottom:32}}>{children}</div>
+    </div>
+  );
+}
+
+function Toggle({ on, onChange }) {
+  return (
+    <button onClick={()=>onChange(!on)} style={{width:40,height:22,borderRadius:11,background:on?C.teal:'rgba(255,255,255,0.1)',border:'none',cursor:'pointer',position:'relative',transition:'background .2s',flexShrink:0}}>
+      <div style={{width:18,height:18,borderRadius:'50%',background:'#fff',position:'absolute',top:2,left:on?20:2,transition:'left .2s'}}/>
+    </button>
+  );
+}
+
+// ── Elder Profile Sub-page ──
+function SubElderProfile({ onBack }) {
+  const [name, setName] = useState('張秀蘭');
+  const [age, setAge] = useState('75');
+  const [relation, setRelation] = useState('媽媽');
+  const [saved, setSaved] = useState(false);
+  return (
+    <SettingSubPage title="長輩端資料" onBack={onBack}>
+      <div style={{padding:'20px 16px',display:'flex',flexDirection:'column',gap:14}}>
+        <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:10,padding:'20px 0',background:C.card,borderRadius:14,border:`0.5px solid ${C.border}`}}>
+          <div style={{width:72,height:72,borderRadius:'50%',background:C.tealGlow,border:`2px solid ${C.tealDim}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:32}}>👵</div>
+          <div style={{fontSize:14,color:C.text2}}>長輩頭像</div>
+        </div>
+        {[['姓名',name,setName],['年齡',age,setAge],['稱謂',relation,setRelation]].map(([lbl,val,setter])=>(
+          <div key={lbl}>
+            <div style={{fontSize:11,color:C.text3,marginBottom:6,letterSpacing:.5}}>{lbl}</div>
+            <input value={val} onChange={e=>setter(e.target.value)} style={{width:'100%',background:C.card2,border:`0.5px solid ${C.border2}`,borderRadius:10,padding:'11px 14px',color:C.text,fontSize:14,fontFamily:'Noto Sans TC,sans-serif',outline:'none'}}/>
+          </div>
+        ))}
+        <div>
+          <div style={{fontSize:11,color:C.text3,marginBottom:6,letterSpacing:.5}}>與您的關係</div>
+          <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+            {['媽媽','爸爸','奶奶','爺爺','其他'].map(r=>(
+              <button key={r} onClick={()=>setRelation(r)} style={{padding:'7px 14px',borderRadius:20,fontSize:13,cursor:'pointer',background:relation===r?C.tealGlow:C.card2,border:`0.5px solid ${relation===r?C.tealDim:C.border}`,color:relation===r?C.teal:C.text3,fontFamily:'Noto Sans TC,sans-serif',transition:'all .15s'}}>{r}</button>
+            ))}
+          </div>
+        </div>
+        <button onClick={()=>{setSaved(true);setTimeout(()=>setSaved(false),2000);}} style={{padding:'13px',borderRadius:12,background:saved?C.greenGlow:'rgba(59,130,246,0.12)',border:`0.5px solid ${saved?C.greenDim:'rgba(59,130,246,0.3)'}`,color:saved?C.green:'#93c5fd',fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif',transition:'all .3s'}}>
+          {saved?'✓ 已儲存':'儲存變更'}
+        </button>
+      </div>
+    </SettingSubPage>
+  );
+}
+
+// ── Notification Settings Sub-page ──
+function SubNotifSettings({ onBack }) {
+  const [settings, setSettings] = useState({
+    sos:true, medMissed:true, medDone:true, dailyReport:true,
+    health:false, location:false, quietHourOn:true,
+  });
+  const toggle = k => setSettings(s=>({...s,[k]:!s[k]}));
+  const rows = [
+    {k:'sos',      icon:'🚨', label:'SOS 緊急通報',    sub:'觸發後立即推播',             urgent:true},
+    {k:'medMissed',icon:'💊', label:'藥物未服用提醒',   sub:'超過服藥時間未確認'},
+    {k:'medDone',  icon:'✅', label:'藥物服用完成',     sub:'長輩確認服藥後通知'},
+    {k:'dailyReport',icon:'😊',label:'每日我很好回報',  sub:'長輩回報狀態時通知'},
+    {k:'health',   icon:'📊', label:'健康數值更新',     sub:'量測血壓血糖後通知'},
+    {k:'location', icon:'📍', label:'位置異常',         sub:'長輩移動超出習慣範圍'},
+  ];
+  return (
+    <SettingSubPage title="通知設定" onBack={onBack}>
+      <div style={{padding:'16px 16px 0'}}>
+        <div style={{background:C.card,border:`0.5px solid ${C.border}`,borderRadius:14,overflow:'hidden'}}>
+          {rows.map((r,i)=>(
+            <div key={r.k} style={{display:'flex',alignItems:'center',gap:12,padding:'13px 16px',borderBottom:i<rows.length-1?`0.5px solid ${C.border}`:'none'}}>
+              <span style={{fontSize:18,flexShrink:0}}>{r.icon}</span>
+              <div style={{flex:1}}>
+                <div style={{fontSize:13,fontWeight:500,color:r.urgent&&settings[r.k]?C.red:C.text}}>{r.label}</div>
+                <div style={{fontSize:11,color:C.text2,marginTop:1}}>{r.sub}</div>
+              </div>
+              <Toggle on={settings[r.k]} onChange={()=>toggle(r.k)}/>
+            </div>
+          ))}
+        </div>
+        <div style={{marginTop:14,background:C.card,border:`0.5px solid ${C.border}`,borderRadius:14,padding:'13px 16px'}}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:settings.quietHourOn?10:0}}>
+            <div>
+              <div style={{fontSize:13,fontWeight:500}}>🌙 勿擾時段</div>
+              <div style={{fontSize:11,color:C.text2,marginTop:1}}>此時段內僅 SOS 會通知</div>
+            </div>
+            <Toggle on={settings.quietHourOn} onChange={()=>toggle('quietHourOn')}/>
+          </div>
+          {settings.quietHourOn && (
+            <div style={{display:'flex',gap:10,marginTop:4}}>
+              {[['開始','22:00'],['結束','07:00']].map(([lbl,val])=>(
+                <div key={lbl} style={{flex:1}}>
+                  <div style={{fontSize:10,color:C.text3,marginBottom:4}}>{lbl}</div>
+                  <input type="time" defaultValue={val} style={{width:'100%',background:C.card2,border:`0.5px solid ${C.border2}`,borderRadius:8,padding:'8px 10px',color:C.text,fontSize:13,fontFamily:'Noto Sans TC,sans-serif',outline:'none',colorScheme:'dark'}}/>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </SettingSubPage>
+  );
+}
+
+// ── Emergency Contacts Sub-page ──
+function SubContacts({ onBack }) {
+  const [contacts, setContacts] = useState([
+    {id:1,name:'大哥 志明',phone:'0912-345-678',relation:'長子',priority:1,active:true},
+    {id:2,name:'二姊 美玲',phone:'0923-456-789',relation:'長女',priority:2,active:true},
+    {id:3,name:'小弟 建宏',phone:'0934-567-890',relation:'次子',priority:3,active:false},
+  ]);
+  const [showAdd, setShowAdd] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newPhone, setNewPhone] = useState('');
+  const [newRel, setNewRel] = useState('');
+
+  const toggle = id => setContacts(c=>c.map(x=>x.id===id?{...x,active:!x.active}:x));
+  const del = id => setContacts(c=>c.filter(x=>x.id!==id));
+  const add = () => {
+    if(!newName||!newPhone) return;
+    setContacts(c=>[...c,{id:Date.now(),name:newName,phone:newPhone,relation:newRel||'家人',priority:c.length+1,active:true}]);
+    setNewName(''); setNewPhone(''); setNewRel(''); setShowAdd(false);
+  };
+
+  return (
+    <SettingSubPage title="緊急聯絡人" onBack={onBack}>
+      <div style={{padding:'16px 16px 0',display:'flex',flexDirection:'column',gap:10}}>
+        <div style={{fontSize:11,color:C.text3,lineHeight:1.6,padding:'10px 12px',background:C.card2,border:`0.5px solid ${C.border}`,borderRadius:10}}>
+          SOS 觸發時，依優先順序通知以下聯絡人。可開關各聯絡人的通知。
+        </div>
+        {contacts.map((c,i)=>(
+          <div key={c.id} style={{background:C.card,border:`0.5px solid ${c.active?C.border2:C.border}`,borderRadius:14,padding:'13px 14px',display:'flex',gap:12,alignItems:'center',opacity:c.active?1:0.5,transition:'opacity .2s'}}>
+            <div style={{width:34,height:34,borderRadius:'50%',background:c.active?C.tealGlow:'rgba(255,255,255,0.04)',border:`1.5px solid ${c.active?C.tealDim:C.border}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,flexShrink:0,fontWeight:700,color:c.active?C.teal:C.text3}}>{c.priority}</div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:13,fontWeight:600}}>{c.name}</div>
+              <div style={{fontSize:11,color:C.text2,marginTop:1}}>{c.phone} · {c.relation}</div>
+            </div>
+            <div style={{display:'flex',gap:8,alignItems:'center'}}>
+              <Toggle on={c.active} onChange={()=>toggle(c.id)}/>
+              <button onClick={()=>del(c.id)} style={{width:28,height:28,borderRadius:7,background:C.redGlow,border:`0.5px solid ${C.redDim}`,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:C.red}}>{Icon.x}</button>
+            </div>
+          </div>
+        ))}
+
+        {showAdd ? (
+          <div style={{background:C.card,border:`0.5px solid ${C.border2}`,borderRadius:14,padding:'14px'}}>
+            <div style={{fontSize:13,fontWeight:600,marginBottom:12}}>新增聯絡人</div>
+            {[['姓名 *',newName,setNewName,'例：三弟 志遠'],['電話 *',newPhone,setNewPhone,'0912-000-000'],['關係',newRel,setNewRel,'例：次子']].map(([lbl,val,setter,ph])=>(
+              <div key={lbl} style={{marginBottom:10}}>
+                <div style={{fontSize:10,color:C.text3,marginBottom:4,letterSpacing:.5}}>{lbl}</div>
+                <input value={val} onChange={e=>setter(e.target.value)} placeholder={ph} style={{width:'100%',background:C.card2,border:`0.5px solid ${C.border2}`,borderRadius:8,padding:'9px 12px',color:C.text,fontSize:13,fontFamily:'Noto Sans TC,sans-serif',outline:'none'}}/>
+              </div>
+            ))}
+            <div style={{display:'flex',gap:8,marginTop:4}}>
+              <button onClick={()=>setShowAdd(false)} style={{flex:1,padding:'10px',borderRadius:8,background:C.card2,border:`0.5px solid ${C.border}`,color:C.text2,fontSize:13,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif'}}>取消</button>
+              <button onClick={add} style={{flex:2,padding:'10px',borderRadius:8,background:'rgba(20,184,166,0.12)',border:`0.5px solid ${C.tealDim}`,color:C.teal,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif'}}>新增</button>
+            </div>
+          </div>
+        ) : (
+          <button onClick={()=>setShowAdd(true)} style={{padding:'11px',borderRadius:12,background:'rgba(255,255,255,0.03)',border:`0.5px dashed rgba(255,255,255,0.12)`,color:C.text3,fontSize:13,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+            {Icon.plus} 新增聯絡人
+          </button>
+        )}
+
+        {/* 119 note */}
+        <div style={{background:C.redGlow,border:`0.5px solid ${C.redDim}`,borderRadius:10,padding:'10px 12px',fontSize:11,color:'rgba(239,68,68,0.7)',lineHeight:1.6}}>
+          🚑 119 緊急救援需額外確認才會撥打，不會自動通知。
+        </div>
+      </div>
+    </SettingSubPage>
+  );
+}
+
+// ── Location Settings Sub-page ──
+function SubLocation({ onBack }) {
+  const [locationOn, setLocationOn] = useState(true);
+  const [shareWith, setShareWith] = useState(['大哥 志明','二姊 美玲']);
+  const [geofence, setGeofence] = useState(true);
+  const [radius, setRadius] = useState(1);
+
+  return (
+    <SettingSubPage title="位置分享" onBack={onBack}>
+      <div style={{padding:'16px 16px 0',display:'flex',flexDirection:'column',gap:10}}>
+        <div style={{background:C.card,border:`0.5px solid ${C.border}`,borderRadius:14,overflow:'hidden'}}>
+          <div style={{display:'flex',alignItems:'center',gap:12,padding:'13px 16px',borderBottom:`0.5px solid ${C.border}`}}>
+            <span style={{fontSize:18}}>📍</span>
+            <div style={{flex:1}}>
+              <div style={{fontSize:13,fontWeight:500}}>即時位置分享</div>
+              <div style={{fontSize:11,color:C.text2,marginTop:1}}>讓家人看到長輩位置</div>
+            </div>
+            <Toggle on={locationOn} onChange={setLocationOn}/>
+          </div>
+          <div style={{display:'flex',alignItems:'center',gap:12,padding:'13px 16px',opacity:locationOn?1:.4}}>
+            <span style={{fontSize:18}}>🏠</span>
+            <div style={{flex:1}}>
+              <div style={{fontSize:13,fontWeight:500}}>地理圍欄警示</div>
+              <div style={{fontSize:11,color:C.text2,marginTop:1}}>離開設定範圍時通知</div>
+            </div>
+            <Toggle on={geofence} onChange={setGeofence}/>
+          </div>
+        </div>
+
+        {locationOn && geofence && (
+          <div style={{background:C.card,border:`0.5px solid ${C.border}`,borderRadius:14,padding:'13px 16px'}}>
+            <div style={{fontSize:12,color:C.text2,marginBottom:10}}>警示範圍（以家為中心）</div>
+            <div style={{display:'flex',alignItems:'center',gap:12}}>
+              <input type="range" min={0.5} max={5} step={0.5} value={radius} onChange={e=>setRadius(+e.target.value)} style={{flex:1,accentColor:C.teal}}/>
+              <span style={{fontSize:15,fontWeight:600,color:C.teal,minWidth:40}}>{radius} km</span>
+            </div>
+          </div>
+        )}
+
+        <div style={{background:C.card,border:`0.5px solid ${C.border}`,borderRadius:14,padding:'13px 16px'}}>
+          <div style={{fontSize:12,color:C.text2,marginBottom:10}}>共享對象</div>
+          {['大哥 志明','二姊 美玲','小弟 建宏'].map(name=>{
+            const on = shareWith.includes(name);
+            return (
+              <div key={name} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 0',borderBottom:`0.5px solid ${C.border}`}}>
+                <span style={{fontSize:13,color:on?C.text:C.text3}}>{name}</span>
+                <Toggle on={on} onChange={()=>setShareWith(s=>s.includes(name)?s.filter(x=>x!==name):[...s,name])}/>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </SettingSubPage>
+  );
+}
+
+// ─── Settings Screen ───
+function SettingsScreen({ onSwitchMode }) {
+  const [subPage, setSubPage] = useState(null);
+
+  const rows = [
+    { id:'elder',    icon:'👵', label:'長輩端資料',   sub:'張秀蘭・75 歲' },
+    { id:'notifs',   icon:'🔔', label:'通知設定',     sub:'SOS、藥物、每日回報' },
+    { id:'contacts', icon:'👥', label:'緊急聯絡人',   sub:'3 位聯絡人' },
+    { id:'location', icon:'📍', label:'位置分享',     sub:'已開啟・1 km 警示' },
+  ];
+
+  return (
+    <div style={{flex:1,overflowY:'auto',paddingBottom:80,position:'relative'}}>
+      <div style={{padding:'14px 16px 14px',fontSize:18,fontWeight:700}}>設定</div>
+
+      {/* switch to elder */}
+      <div style={{padding:'0 16px 14px'}}>
+        <button onClick={onSwitchMode} style={{width:'100%',padding:'13px 16px',borderRadius:14,background:'rgba(20,184,166,0.1)',border:`0.5px solid ${C.tealDim}`,display:'flex',alignItems:'center',gap:12,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif',textAlign:'left'}}>
+          <span style={{fontSize:20}}>👵</span>
+          <div style={{flex:1}}>
+            <div style={{fontSize:13,fontWeight:600,color:C.teal}}>切換至長輩端</div>
+            <div style={{fontSize:11,color:C.text2,marginTop:2}}>預覽長輩所看到的畫面</div>
+          </div>
+          {Icon.chevRight}
+        </button>
+      </div>
+
+      <div style={{margin:'0 16px',background:C.card,border:`0.5px solid ${C.border}`,borderRadius:14,overflow:'hidden'}}>
+        {rows.map((r,i)=>(
+          <button key={r.id} onClick={()=>setSubPage(r.id)} style={{width:'100%',display:'flex',alignItems:'center',gap:12,padding:'13px 16px',borderBottom:i<rows.length-1?`0.5px solid ${C.border}`:'none',cursor:'pointer',background:'none',border:'none',borderBottom:i<rows.length-1?`0.5px solid ${C.border}`:'none',textAlign:'left',fontFamily:'Noto Sans TC,sans-serif'}}>
+            <span style={{fontSize:18,flexShrink:0}}>{r.icon}</span>
+            <div style={{flex:1}}>
+              <div style={{fontSize:13,fontWeight:500,color:C.text}}>{r.label}</div>
+              <div style={{fontSize:11,color:C.text2,marginTop:2}}>{r.sub}</div>
+            </div>
+            <span style={{color:C.text3}}>{Icon.chevRight}</span>
+          </button>
+        ))}
+      </div>
+
+      <div style={{padding:'20px 16px 0',fontSize:11,color:C.text3,textAlign:'center'}}>
+        CareLink v0.1 — MVP 原型
+      </div>
+
+      {/* sub-pages */}
+      {subPage==='elder'    && <SubElderProfile    onBack={()=>setSubPage(null)}/>}
+      {subPage==='notifs'   && <SubNotifSettings   onBack={()=>setSubPage(null)}/>}
+      {subPage==='contacts' && <SubContacts        onBack={()=>setSubPage(null)}/>}
+      {subPage==='location' && <SubLocation        onBack={()=>setSubPage(null)}/>}
+    </div>
+  );
+}
+
+// ─── Tab Bar ───
+const CalIcon = <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>;
+const HeartIcon = <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>;
+
+function TabBar({ tab, setTab }) {
+  const tabs = [
+    { id:'dashboard',     label:'總覽', icon:Icon.home },
+    { id:'health',        label:'健康', icon:HeartIcon },
+    { id:'medications',   label:'藥物', icon:Icon.pill, badge:1 },
+    { id:'appointments',  label:'行程', icon:CalIcon },
+    { id:'settings',      label:'設定', icon:Icon.settings },
+  ];
+  return (
+    <div style={{position:'absolute',bottom:0,left:0,right:0,height:72,background:'rgba(10,13,20,0.97)',backdropFilter:'blur(12px)',borderTop:`0.5px solid ${C.border}`,display:'flex',zIndex:50,paddingBottom:10}}>
+      {tabs.map(t=>(
+        <button key={t.id} onClick={()=>setTab(t.id)} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:3,background:'none',border:'none',cursor:'pointer',color:tab===t.id?C.amber:C.text3,transition:'color .2s',position:'relative',fontFamily:'Noto Sans TC,sans-serif'}}>
+          {t.icon}
+          <span style={{fontSize:9,fontWeight:tab===t.id?600:400,letterSpacing:.2}}>{t.label}</span>
+          {t.badge && <div style={{position:'absolute',top:8,right:'calc(50% - 14px)',width:14,height:14,background:C.red,borderRadius:'50%',fontSize:8,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,color:'#fff'}}>{t.badge}</div>}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ─── Phone Call Overlay ───
+function PhoneCallOverlay({ name, number, onClose }) {
+  const [callPhase, setCallPhase] = useState('ringing'); // ringing | connected | ended
+  const [seconds, setSeconds] = useState(0);
+  const timerRef = useRef(null);
+
+  useEffect(()=>{
+    const t = setTimeout(()=>setCallPhase('connected'), 2800);
+    return ()=>clearTimeout(t);
+  },[]);
+
+  useEffect(()=>{
+    if(callPhase==='connected'){
+      timerRef.current = setInterval(()=>setSeconds(s=>s+1),1000);
+    }
+    return ()=>clearInterval(timerRef.current);
+  },[callPhase]);
+
+  const fmt = s => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+
+  const handleHangup = () => { setCallPhase('ended'); setTimeout(onClose, 900); };
+
+  return (
+    <div className="anim-fadeIn" style={{position:'absolute',inset:0,background:'linear-gradient(170deg,#0d1a0f 0%,#0a0d14 100%)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'space-between',zIndex:300,padding:'40px 24px 48px'}}>
+      {/* ripple rings */}
+      <div style={{position:'absolute',top:'28%',left:'50%',transform:'translate(-50%,-50%)',pointerEvents:'none'}}>
+        {[0,1,2].map(i=>(
+          <div key={i} style={{position:'absolute',width:160+i*60,height:160+i*60,borderRadius:'50%',border:`1px solid rgba(34,197,94,${0.12-i*0.03})`,top:'50%',left:'50%',transform:'translate(-50%,-50%)',animation:`rippleRing 2.4s ${i*0.6}s ease-out infinite`}}/>
+        ))}
+      </div>
+
+      <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:6,zIndex:1,marginTop:20}}>
+        <div style={{width:80,height:80,borderRadius:'50%',background:'rgba(34,197,94,0.12)',border:`2px solid rgba(34,197,94,0.3)`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:32,marginBottom:8}}>👵</div>
+        <div style={{fontSize:26,fontWeight:700,color:'#fff'}}>{name}</div>
+        <div style={{fontSize:13,color:C.text3}}>{number}</div>
+        <div style={{marginTop:8,fontSize:14,color:callPhase==='connected'?C.green:C.text2,fontWeight:500}}>
+          {callPhase==='ringing'?'撥號中…': callPhase==='connected'?fmt(seconds):'通話結束'}
+        </div>
+        {callPhase==='connected' && (
+          <div style={{display:'flex',alignItems:'center',gap:6,background:C.greenGlow,border:`0.5px solid ${C.greenDim}`,borderRadius:20,padding:'4px 12px',fontSize:11,color:C.green}}>
+            <div style={{width:6,height:6,background:C.green,borderRadius:'50%',animation:'pulse 1s infinite'}}/>
+            通話中
+          </div>
+        )}
+      </div>
+
+      <div style={{display:'flex',gap:28,zIndex:1}}>
+        {[
+          {icon:'🔇',label:'靜音',color:C.text2},
+          {icon:'🔊',label:'擴音',color:C.text2},
+          {icon:'⌨️',label:'鍵盤',color:C.text2},
+        ].map(b=>(
+          <div key={b.label} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:8}}>
+            <div style={{width:52,height:52,borderRadius:'50%',background:'rgba(255,255,255,0.08)',border:`0.5px solid rgba(255,255,255,0.1)`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,cursor:'pointer'}}>{b.icon}</div>
+            <span style={{fontSize:11,color:b.color}}>{b.label}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* hang up */}
+      <button onClick={handleHangup} style={{width:68,height:68,borderRadius:'50%',background:C.red,border:'none',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',zIndex:1,fontSize:28,boxShadow:`0 4px 20px rgba(239,68,68,0.5)`}}>
+        📵
+      </button>
+
+      <style>{`@keyframes rippleRing{0%{transform:translate(-50%,-50%) scale(0.8);opacity:0.6}100%{transform:translate(-50%,-50%) scale(1.5);opacity:0}}`}</style>
+    </div>
+  );
+}
+
+// ─── Map Location Overlay ───
+function MapLocationOverlay({ onClose }) {
+  const [tracking, setTracking] = useState(true);
+
+  return (
+    <div className="anim-fadeIn" style={{position:'absolute',inset:0,background:C.bg,display:'flex',flexDirection:'column',zIndex:300,overflow:'hidden'}}>
+      {/* header */}
+      <div style={{padding:'12px 16px',display:'flex',alignItems:'center',gap:12,background:C.surface,borderBottom:`0.5px solid ${C.border}`,flexShrink:0}}>
+        <button onClick={onClose} style={{width:32,height:32,borderRadius:8,background:C.card,border:`0.5px solid ${C.border}`,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:C.text2,flexShrink:0}}>{Icon.x}</button>
+        <div style={{flex:1}}>
+          <div style={{fontSize:14,fontWeight:600}}>媽媽的位置</div>
+          <div style={{fontSize:11,color:C.text3,marginTop:1}}>上次更新：3 分鐘前</div>
+        </div>
+        <div style={{display:'flex',alignItems:'center',gap:6,background:tracking?C.greenGlow:'rgba(255,255,255,0.05)',border:`0.5px solid ${tracking?C.greenDim:C.border}`,borderRadius:20,padding:'5px 12px',cursor:'pointer'}} onClick={()=>setTracking(t=>!t)}>
+          <div style={{width:6,height:6,background:tracking?C.green:C.text3,borderRadius:'50%',animation:tracking?'pulse 1.5s infinite':undefined}}/>
+          <span style={{fontSize:11,color:tracking?C.green:C.text3}}>{tracking?'即時追蹤':'已暫停'}</span>
+        </div>
+      </div>
+
+      {/* fake map */}
+      <div style={{flex:1,position:'relative',background:'#0d1520',overflow:'hidden'}}>
+        {/* grid lines */}
+        <svg style={{position:'absolute',inset:0,width:'100%',height:'100%',opacity:.15}} xmlns="http://www.w3.org/2000/svg">
+          <defs><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke={C.teal} strokeWidth="0.5"/></pattern></defs>
+          <rect width="100%" height="100%" fill="url(#grid)"/>
+        </svg>
+        {/* fake roads */}
+        <svg style={{position:'absolute',inset:0,width:'100%',height:'100%'}} xmlns="http://www.w3.org/2000/svg">
+          <path d="M 0 220 Q 120 210 190 230 T 375 220" stroke="rgba(255,255,255,0.08)" strokeWidth="14" fill="none"/>
+          <path d="M 0 220 Q 120 210 190 230 T 375 220" stroke="rgba(255,255,255,0.04)" strokeWidth="12" fill="none"/>
+          <path d="M 180 0 Q 190 120 185 230 T 200 450" stroke="rgba(255,255,255,0.07)" strokeWidth="10" fill="none"/>
+          <path d="M 60 0 L 55 450" stroke="rgba(255,255,255,0.04)" strokeWidth="6" fill="none"/>
+          <path d="M 0 320 L 375 315" stroke="rgba(255,255,255,0.04)" strokeWidth="6" fill="none"/>
+          <text x="30" y="215" fill="rgba(255,255,255,0.12)" fontSize="9" fontFamily="sans-serif">中山北路</text>
+          <text x="192" y="100" fill="rgba(255,255,255,0.12)" fontSize="9" fontFamily="sans-serif" transform="rotate(90,192,100)">民生東路</text>
+          <text x="20" y="318" fill="rgba(255,255,255,0.12)" fontSize="9" fontFamily="sans-serif">南京東路</text>
+        </svg>
+        {/* blocks */}
+        {[[20,260,130,50],[170,260,195,50],[20,140,90,70],[110,140,250,75]].map(([x,y,w,h],i)=>(
+          <div key={i} style={{position:'absolute',left:x,top:y,width:w,height:h,background:'rgba(255,255,255,0.025)',border:'0.5px solid rgba(255,255,255,0.04)',borderRadius:3}}/>
+        ))}
+        {/* home marker */}
+        <div style={{position:'absolute',left:130,top:185,transform:'translate(-50%,-50%)'}}>
+          <div style={{width:14,height:14,borderRadius:'50%',background:'rgba(59,130,246,0.2)',border:`1px solid rgba(59,130,246,0.4)`,display:'flex',alignItems:'center',justifyContent:'center',position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%) scale(3)',opacity:.3}}/>
+          <div style={{fontSize:12,color:C.blue,position:'absolute',top:-28,left:'50%',transform:'translateX(-50%)',whiteSpace:'nowrap',fontSize:10,background:'rgba(59,130,246,0.15)',border:`0.5px solid rgba(59,130,246,0.3)`,borderRadius:5,padding:'2px 6px'}}>🏠 家</div>
+          <div style={{width:12,height:12,borderRadius:'50%',background:C.blue,opacity:0.6}}/>
+        </div>
+        {/* elder location pin */}
+        <div style={{position:'absolute',left:190,top:230,transform:'translate(-50%,-100%)'}}>
+          {/* accuracy ring */}
+          <div style={{position:'absolute',width:50,height:50,borderRadius:'50%',background:'rgba(34,197,94,0.1)',border:`1px solid rgba(34,197,94,0.2)`,top:'50%',left:'50%',transform:'translate(-50%,-30%)'}}/>
+          {/* pin */}
+          <div style={{display:'flex',flexDirection:'column',alignItems:'center'}}>
+            <div style={{width:40,height:40,borderRadius:'50% 50% 50% 0',transform:'rotate(-45deg)',background:`linear-gradient(135deg,${C.green},#16a34a)`,boxShadow:`0 4px 14px rgba(34,197,94,0.5)`,display:'flex',alignItems:'center',justifyContent:'center'}}>
+              <span style={{transform:'rotate(45deg)',fontSize:18}}>👵</span>
+            </div>
+            <div style={{width:6,height:6,borderRadius:'50%',background:C.green,marginTop:-2,boxShadow:`0 2px 6px rgba(34,197,94,0.6)`}}/>
+          </div>
+        </div>
+        {/* info card on map */}
+        <div style={{position:'absolute',bottom:0,left:0,right:0,padding:'14px 16px',background:'linear-gradient(0deg,rgba(10,13,20,0.98) 60%,transparent)',paddingBottom:20}}>
+          <div style={{background:C.card,border:`0.5px solid ${C.border2}`,borderRadius:14,padding:'13px 16px'}}>
+            <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
+              <div style={{width:36,height:36,borderRadius:'50%',background:C.greenGlow,border:`1.5px solid ${C.greenDim}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}}>👵</div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:13,fontWeight:600}}>媽媽・張秀蘭</div>
+                <div style={{fontSize:11,color:C.text2,marginTop:1}}>📍 台北市中山區民生東路三段</div>
+              </div>
+              <div style={{fontSize:11,color:C.green,background:C.greenGlow,border:`0.5px solid ${C.greenDim}`,borderRadius:8,padding:'3px 8px'}}>附近</div>
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+              <div style={{background:C.card2,border:`0.5px solid ${C.border}`,borderRadius:8,padding:'8px 10px'}}>
+                <div style={{fontSize:10,color:C.text3,marginBottom:3}}>距離住家</div>
+                <div style={{fontSize:14,fontWeight:600,color:C.green}}>650 m</div>
+              </div>
+              <div style={{background:C.card2,border:`0.5px solid ${C.border}`,borderRadius:8,padding:'8px 10px'}}>
+                <div style={{fontSize:10,color:C.text3,marginBottom:3}}>停留時間</div>
+                <div style={{fontSize:14,fontWeight:600,color:C.text}}>約 25 分</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── SOS Overlay ───
+function SOSOverlay({ onClose }) {
+  const [phase, setPhase] = useState('notifying'); // notifying → confirm119 → calling119 → done
+  const [contacts, setContacts] = useState([
+    { id:1, name:'大哥 志明', phone:'0912-345-678', notified:false, enabled:true },
+    { id:2, name:'二姊 美玲', phone:'0923-456-789', notified:false, enabled:true },
+    { id:3, name:'小弟 建宏', phone:'0934-567-890', notified:false, enabled:false },
+  ]);
+
+  // Auto-notify contacts one by one
+  useEffect(()=>{
+    if(phase!=='notifying') return;
+    const timers = contacts.filter(c=>c.enabled).map((c,i)=>
+      setTimeout(()=>setContacts(prev=>prev.map(x=>x.id===c.id?{...x,notified:true}:x)), 800+i*900)
+    );
+    const next = setTimeout(()=>setPhase('confirm119'), 800 + contacts.filter(c=>c.enabled).length*900 + 400);
+    return ()=>{timers.forEach(clearTimeout); clearTimeout(next);};
+  },[phase]);
+
+  const toggleContact = id => setContacts(c=>c.map(x=>x.id===id?{...x,enabled:!x.enabled}:x));
+
+  return (
+    <div style={{position:'absolute',inset:0,background:'rgba(8,0,0,0.96)',display:'flex',flexDirection:'column',zIndex:200,overflow:'hidden'}}>
+      <div style={{position:'absolute',inset:0,background:'radial-gradient(circle at 50% 30%,rgba(239,68,68,0.12) 0%,transparent 60%)',pointerEvents:'none'}}/>
+
+      {/* ── PHASE: notifying ── */}
+      {(phase==='notifying'||phase==='confirm119') && (
+        <div className="anim-fadeIn" style={{flex:1,display:'flex',flexDirection:'column',padding:24,overflowY:'auto',paddingBottom:24}}>
+          <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:20}}>
+            <div style={{width:48,height:48,borderRadius:'50%',background:'rgba(239,68,68,0.15)',border:`2px solid ${C.red}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,flexShrink:0}}>🚨</div>
+            <div>
+              <div style={{fontSize:20,fontWeight:900,color:'#fff'}}>SOS 警報觸發</div>
+              <div style={{fontSize:12,color:C.text2,marginTop:2}}>媽媽已按下緊急按鈕</div>
+            </div>
+          </div>
+
+          {/* contact list */}
+          <div style={{fontSize:11,color:C.text3,letterSpacing:1.2,textTransform:'uppercase',marginBottom:10}}>緊急聯絡人</div>
+          <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:16}}>
+            {contacts.map(c=>(
+              <div key={c.id} style={{display:'flex',alignItems:'center',gap:12,background:'rgba(239,68,68,0.06)',border:`0.5px solid ${c.enabled?C.redDim:'rgba(255,255,255,0.06)'}`,borderRadius:12,padding:'11px 14px',opacity:c.enabled?1:0.45,transition:'all .2s'}}>
+                <div style={{width:32,height:32,borderRadius:'50%',background:'rgba(255,255,255,0.05)',border:`0.5px solid rgba(255,255,255,0.1)`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,flexShrink:0}}>
+                  {c.name.split(' ')[0].slice(-1)==='明'?'👨':c.name.includes('玲')?'👩':'🧑'}
+                </div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:13,fontWeight:600,color:'#fff'}}>{c.name}</div>
+                  <div style={{fontSize:11,color:C.text3,marginTop:1}}>{c.phone}</div>
+                </div>
+                <div style={{display:'flex',alignItems:'center',gap:8}}>
+                  {c.enabled && (
+                    <span style={{fontSize:11,color:c.notified?C.green:C.amber,minWidth:40,textAlign:'right'}}>
+                      {c.notified?'✓ 已通知':'通知中…'}
+                    </span>
+                  )}
+                  {/* toggle */}
+                  <button onClick={()=>toggleContact(c.id)} style={{width:32,height:18,borderRadius:9,background:c.enabled?'rgba(239,68,68,0.3)':'rgba(255,255,255,0.08)',border:`0.5px solid ${c.enabled?C.redDim:'rgba(255,255,255,0.1)'}`,cursor:'pointer',position:'relative',flexShrink:0,transition:'all .2s'}}>
+                    <div style={{width:14,height:14,borderRadius:'50%',background:'#fff',position:'absolute',top:2,left:c.enabled?16:2,transition:'left .2s'}}/>
+                  </button>
+                </div>
+              </div>
+            ))}
+            <button style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'10px',borderRadius:12,background:'rgba(255,255,255,0.03)',border:`0.5px dashed rgba(255,255,255,0.12)`,cursor:'pointer',color:C.text3,fontSize:12,fontFamily:'Noto Sans TC,sans-serif'}}>
+              {Icon.plus} 新增聯絡人
+            </button>
+          </div>
+
+          {/* 119 confirm block */}
+          {phase==='confirm119' && (
+            <div className="anim-slideUp" style={{background:'rgba(239,68,68,0.08)',border:`1px solid rgba(239,68,68,0.3)`,borderRadius:14,padding:'16px'}}>
+              <div style={{fontSize:14,fontWeight:700,color:'#fff',marginBottom:6}}>🚑 是否同時通報 119？</div>
+              <div style={{fontSize:12,color:C.text2,marginBottom:14,lineHeight:1.6}}>家人已收到通知。若情況緊急，可進一步通報緊急救援。</div>
+              <div style={{display:'flex',gap:10}}>
+                <button onClick={()=>setPhase('calling119')} style={{flex:1,padding:'12px',borderRadius:10,background:C.red,border:'none',color:'#fff',fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif'}}>
+                  🚑 立即通報 119
+                </button>
+                <button onClick={onClose} style={{flex:1,padding:'12px',borderRadius:10,background:'rgba(255,255,255,0.06)',border:`0.5px solid rgba(255,255,255,0.12)`,color:C.text2,fontSize:14,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif'}}>
+                  不需要
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── PHASE: calling 119 ── */}
+      {phase==='calling119' && (
+        <div className="anim-slideUp" style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:24,gap:16}}>
+          <div style={{position:'absolute',inset:0,background:'radial-gradient(circle at 50% 45%,rgba(239,68,68,0.2) 0%,transparent 55%)'}}/>
+          {[0,1].map(i=>(
+            <div key={i} style={{position:'absolute',width:180+i*80,height:180+i*80,borderRadius:'50%',border:`1px solid rgba(239,68,68,${0.15-i*0.05})`,top:'35%',left:'50%',transform:'translate(-50%,-50%)',animation:`rippleRing 2s ${i*0.7}s ease-out infinite`}}/>
+          ))}
+          <div style={{width:80,height:80,borderRadius:'50%',background:'rgba(239,68,68,0.15)',border:`2px solid ${C.red}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:36,zIndex:1}}>🚑</div>
+          <div style={{fontSize:26,fontWeight:900,color:'#fff',zIndex:1}}>撥打 119 中…</div>
+          <div style={{fontSize:13,color:C.text2,zIndex:1,textAlign:'center',lineHeight:1.6}}>請保持冷靜<br/>救援人員即將抵達</div>
+          <div style={{width:'100%',display:'flex',flexDirection:'column',gap:8,zIndex:1,marginTop:8}}>
+            {contacts.filter(c=>c.enabled).map(c=>(
+              <div key={c.id} style={{display:'flex',alignItems:'center',gap:10,background:'rgba(239,68,68,0.06)',border:`0.5px solid ${C.redDim}`,borderRadius:10,padding:'10px 14px'}}>
+                <div style={{width:7,height:7,borderRadius:'50%',background:C.green,animation:'pulse 1.5s infinite'}}/>
+                <span style={{fontSize:12,color:'#fff',flex:1}}>{c.name}</span>
+                <span style={{fontSize:11,color:C.green}}>已通知</span>
+              </div>
+            ))}
+          </div>
+          <button onClick={onClose} style={{marginTop:12,padding:'12px 32px',borderRadius:12,background:'rgba(255,255,255,0.06)',border:`0.5px solid rgba(255,255,255,0.12)`,color:C.text2,fontSize:14,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif',zIndex:1}}>關閉</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Caregiver App ───
+function CaregiverApp({ onSwitchMode, tweaks }) {
+  const [tab, setTab] = useState('dashboard');
+  const [showSOS, setShowSOS] = useState(false);
+  const [showCall, setShowCall] = useState(false);
+  const [showMap, setShowMap] = useState(false);
+
+  const screens = {
+    dashboard:<DashboardScreen onSOS={()=>setShowSOS(true)} onCall={()=>setShowCall(true)} onMap={()=>setShowMap(true)} tweaks={tweaks} goTo={setTab}/>,
+    notifications:<NotificationsScreen/>,
+    health:<HealthVitalsScreen/>,
+    appointments:<AppointmentsScreen/>,
+    medications:<MedicationsScreen/>,
+    settings:<SettingsScreen onSwitchMode={onSwitchMode}/>
+  };
+
+  return (
+    <div style={{flex:1,display:'flex',flexDirection:'column',position:'relative',overflow:'hidden'}}>
+      <div className="anim-fadeIn" style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+        {screens[tab]}
+      </div>
+      <TabBar tab={tab} setTab={setTab}/>
+      {showSOS && <SOSOverlay onClose={()=>setShowSOS(false)}/>}
+      {showCall && <PhoneCallOverlay name="媽媽・張秀蘭" number="0912-345-678" onClose={()=>setShowCall(false)}/>}
+      {showMap && <MapLocationOverlay onClose={()=>setShowMap(false)}/>}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════
+// ELDER SIDE
+// ═══════════════════════════════════
+
+// ─── Elder Home ───
+function ElderHome({ onSOS, onMed, onConfirm, onHealth, onAppt }) {
+  const [confirmed, setConfirmed] = useState(false);
+
+  const handleConfirm = () => {
+    setConfirmed(true);
+    onConfirm();
+  };
+
+  if (confirmed) {
+    return (
+      <div style={{flex:1,background:'linear-gradient(170deg,#051a0d 0%,#0a1a10 100%)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'24px 24px 60px',position:'relative',overflow:'hidden'}} className="anim-fadeIn">
+        <div style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',width:280,height:280,background:'radial-gradient(circle,rgba(34,197,94,0.2) 0%,transparent 70%)',borderRadius:'50%',pointerEvents:'none'}}/>
+        <div style={{width:90,height:90,borderRadius:'50%',background:'rgba(34,197,94,0.15)',border:`2px solid ${C.greenDim}`,display:'flex',alignItems:'center',justifyContent:'center',marginBottom:24,fontSize:40,zIndex:1}}>✓</div>
+        <div style={{fontSize:32,fontWeight:900,color:'#fff',zIndex:1,textAlign:'center',lineHeight:1.2,marginBottom:8}}>已通知家人</div>
+        <div style={{fontSize:15,color:'rgba(255,255,255,0.45)',zIndex:1,textAlign:'center',lineHeight:1.5}}>今天{new Date().getHours()}:{String(new Date().getMinutes()).padStart(2,'0')}<br/>紀錄已儲存</div>
+        <button onClick={()=>setConfirmed(false)} style={{marginTop:40,padding:'14px 32px',borderRadius:16,background:'rgba(34,197,94,0.12)',border:`1px solid ${C.greenDim}`,color:C.green,fontSize:18,fontWeight:700,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif',zIndex:1}}>返回</button>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{flex:1,background:'linear-gradient(170deg,#0d1520 0%,#0a1a12 100%)',display:'flex',flexDirection:'column',alignItems:'center',padding:'20px 24px 20px',position:'relative',overflow:'hidden'}}>
+      <div style={{position:'absolute',bottom:160,left:'50%',transform:'translateX(-50%)',width:260,height:260,background:'radial-gradient(circle,rgba(34,197,94,0.1) 0%,transparent 70%)',borderRadius:'50%',pointerEvents:'none'}}/>
+      {/* greeting */}
+      <div style={{width:'100%',marginBottom:16,zIndex:1}}>
+        <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:4}}>
+          {new Date().toLocaleDateString('zh-TW',{month:'long',day:'numeric',weekday:'short'})}
+        </div>
+        <div style={{fontSize:22,fontWeight:700,color:'rgba(255,255,255,0.9)'}}>早安，秀蘭阿嬤 👋</div>
+      </div>
+
+      {/* status */}
+      <div style={{display:'flex',alignItems:'center',gap:8,background:'rgba(245,158,11,0.1)',border:`0.5px solid rgba(245,158,11,0.25)`,borderRadius:20,padding:'8px 16px',marginBottom:20,zIndex:1}}>
+        <div style={{width:8,height:8,background:C.amber,borderRadius:'50%'}}/>
+        <span style={{fontSize:13,color:'#fbbf24'}}>今天尚未回報</span>
+      </div>
+
+      {/* big button */}
+      <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:16,zIndex:1,width:'100%'}}>
+        <div style={{position:'relative',width:200,height:200,display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <div style={{position:'absolute',inset:0,borderRadius:'50%',border:`1.5px solid rgba(34,197,94,0.15)`}}/>
+          <div style={{position:'absolute',inset:16,borderRadius:'50%',border:`1px solid rgba(34,197,94,0.08)`}}/>
+          <button onClick={handleConfirm} style={{width:152,height:152,borderRadius:'50%',background:'linear-gradient(145deg,#1a3d2b,#0f2a1d)',border:`3px solid rgba(34,197,94,0.4)`,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',cursor:'pointer',WebkitTapHighlightColor:'transparent',transition:'transform 0.12s',fontFamily:'Noto Sans TC,sans-serif'}}>
+            <span style={{fontSize:40,lineHeight:1,marginBottom:8}}>😊</span>
+            <span style={{fontSize:26,fontWeight:900,color:'#fff',letterSpacing:'-0.5px',lineHeight:1}}>我很好</span>
+            <span style={{fontSize:11,color:'rgba(255,255,255,0.4)',marginTop:6}}>輕按通知家人</span>
+          </button>
+        </div>
+        <span style={{fontSize:12,color:'rgba(255,255,255,0.2)',letterSpacing:.5}}>點一下按鈕回報狀態</span>
+      </div>
+
+      {/* health + appointment buttons */}
+      <div style={{display:'flex',gap:8,width:'100%',marginBottom:12,zIndex:1}}>
+        <button onClick={onHealth} style={{flex:1,padding:'11px 10px',borderRadius:14,background:'rgba(168,85,247,0.08)',border:'0.5px solid rgba(168,85,247,0.25)',display:'flex',flexDirection:'column',alignItems:'center',gap:4,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif'}}>
+          <span style={{fontSize:20}}>🩺</span>
+          <span style={{fontSize:13,fontWeight:600,color:'#fff'}}>量測血壓</span>
+          <span style={{fontSize:10,color:'rgba(255,255,255,0.35)'}}>血糖</span>
+        </button>
+        <button onClick={onAppt} style={{flex:1,padding:'11px 10px',borderRadius:14,background:'rgba(59,130,246,0.08)',border:'0.5px solid rgba(59,130,246,0.25)',display:'flex',flexDirection:'column',alignItems:'center',gap:4,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif'}}>
+          <span style={{fontSize:20}}>📅</span>
+          <span style={{fontSize:13,fontWeight:600,color:'#fff'}}>回診行程</span>
+          <span style={{fontSize:10,color:'rgba(255,255,255,0.35)'}}>2 天後</span>
+        </button>
+      </div>
+
+      {/* med reminder */}
+      <button onClick={onMed} style={{width:'100%',padding:'13px 16px',borderRadius:16,background:'rgba(245,158,11,0.08)',border:`0.5px solid rgba(245,158,11,0.25)`,display:'flex',alignItems:'center',gap:12,marginBottom:12,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif',zIndex:1}}>
+        <span style={{fontSize:24}}>💊</span>
+        <div style={{flex:1,textAlign:'left'}}>
+          <div style={{fontSize:18,fontWeight:700,color:'#fff'}}>記錄服藥</div>
+          <div style={{fontSize:12,color:'rgba(255,255,255,0.4)',marginTop:2}}>今天剩 1 種藥未確認</div>
+        </div>
+        <span style={{color:'rgba(255,255,255,0.3)'}}>{Icon.chevRight}</span>
+      </button>
+
+      {/* SOS */}
+      <button onClick={onSOS} style={{width:'100%',padding:'14px 16px',background:'rgba(239,68,68,0.1)',border:`1.5px solid rgba(239,68,68,0.3)`,borderRadius:18,display:'flex',alignItems:'center',justifyContent:'center',gap:10,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif',zIndex:1,WebkitTapHighlightColor:'transparent'}}>
+        <span style={{fontSize:24,fontWeight:900,color:C.red,letterSpacing:2}}>SOS</span>
+        <span style={{fontSize:14,color:'rgba(239,68,68,0.7)'}}>緊急求助</span>
+      </button>
+      <div style={{fontSize:11,color:'rgba(255,255,255,0.2)',marginTop:6,zIndex:1}}>長按 3 秒發送緊急通報</div>
+    </div>
+  );
+}
+
+// ─── Elder SOS Screen ───
+function ElderSOS({ onBack }) {
+  const [phase, setPhase] = useState('press'); // press → countdown → sent
+  const [count, setCount] = useState(3);
+  const [pressing, setPressing] = useState(false);
+  const timerRef = useRef(null);
+  const countRef = useRef(null);
+
+  const startPress = () => {
+    setPressing(true);
+    setPhase('countdown');
+    setCount(3);
+    countRef.current = setInterval(()=>{
+      setCount(c=>{
+        if(c<=1){ clearInterval(countRef.current); setPhase('sent'); return 0; }
+        return c-1;
+      });
+    },1000);
+  };
+
+  const cancelPress = () => {
+    setPressing(false);
+    if(countRef.current) clearInterval(countRef.current);
+    setPhase('press');
+    setCount(3);
+  };
+
+  useEffect(()=>()=>{clearInterval(countRef.current)},[]);
+
+  const dashOffset = phase==='countdown' ? 502 - (502*(3-count)/3) : phase==='sent'?502:502;
+
+  return (
+    <div style={{flex:1,background:'#0d0505',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'24px 24px 60px',position:'relative',overflow:'hidden'}}>
+      <div style={{position:'absolute',inset:0,background:'radial-gradient(circle at 50% 55%,rgba(239,68,68,0.15) 0%,transparent 65%)'}}/>
+
+      {phase==='sent' ? (
+        <div className="anim-slideUp" style={{display:'flex',flexDirection:'column',alignItems:'center',zIndex:1}}>
+          <div style={{width:80,height:80,borderRadius:'50%',background:'rgba(239,68,68,0.12)',border:`2px solid ${C.red}`,display:'flex',alignItems:'center',justifyContent:'center',marginBottom:20,fontSize:36}}>🚨</div>
+          <div style={{fontSize:30,fontWeight:900,color:'#fff',marginBottom:8,textAlign:'center'}}>緊急通報已送出</div>
+          <div style={{fontSize:14,color:'rgba(255,255,255,0.4)',marginBottom:28,textAlign:'center'}}>家人正在趕來，請保持冷靜</div>
+          <div style={{width:280,display:'flex',flexDirection:'column',gap:10,marginBottom:28}}>
+            {['大哥 志明','二姊 美玲'].map((c,i)=>(
+              <div key={c} style={{display:'flex',alignItems:'center',gap:12,background:'rgba(239,68,68,0.06)',border:`0.5px solid ${C.redDim}`,borderRadius:12,padding:'12px 14px'}}>
+                <div style={{width:8,height:8,borderRadius:'50%',background:C.green,animation:'pulse 1.5s infinite'}}/>
+                <span style={{fontSize:14,color:'#fff',flex:1}}>{c}</span>
+                <span style={{fontSize:12,color:C.green}}>已通知</span>
+              </div>
+            ))}
+          </div>
+          <button onClick={onBack} style={{padding:'14px 36px',borderRadius:16,background:'rgba(255,255,255,0.06)',border:`0.5px solid rgba(255,255,255,0.12)`,color:'rgba(255,255,255,0.5)',fontSize:16,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif'}}>返回</button>
+        </div>
+      ) : (
+        <>
+          <div style={{fontSize:20,fontWeight:700,color:'rgba(255,255,255,0.7)',marginBottom:32,zIndex:1,textAlign:'center'}}>
+            {phase==='countdown' ? '放開取消，倒數發送' : '長按 SOS 按鈕求助'}
+          </div>
+          <div style={{position:'relative',width:190,height:190,zIndex:1}}>
+            <svg style={{position:'absolute',inset:0,transform:'rotate(-90deg)'}} viewBox="0 0 190 190">
+              <circle cx="95" cy="95" r="80" fill="none" stroke="rgba(239,68,68,0.1)" strokeWidth="8"/>
+              <circle cx="95" cy="95" r="80" fill="none" stroke={C.red} strokeWidth="8" strokeLinecap="round"
+                strokeDasharray="502" strokeDashoffset={phase==='countdown'?502-(502*(3-count)/3):502}
+                style={{transition:'stroke-dashoffset 0.9s linear'}}/>
+            </svg>
+            <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
+              <button
+                onMouseDown={startPress} onMouseUp={cancelPress} onMouseLeave={cancelPress}
+                onTouchStart={startPress} onTouchEnd={cancelPress}
+                style={{width:130,height:130,borderRadius:'50%',background:'radial-gradient(circle at 40% 35%,#3d1010,#1a0505)',border:`2px solid rgba(239,68,68,0.45)`,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',cursor:'pointer',userSelect:'none',WebkitTapHighlightColor:'transparent',fontFamily:'Noto Sans TC,sans-serif'}}>
+                <span style={{fontSize:26,fontWeight:900,color:'#fca5a5',letterSpacing:2}}>SOS</span>
+                {phase==='countdown'&&<span style={{fontSize:36,fontWeight:900,color:'#fff',lineHeight:1}}>{count}</span>}
+              </button>
+            </div>
+          </div>
+          {phase==='countdown'&&(
+            <button onClick={cancelPress} style={{marginTop:30,zIndex:1,background:'rgba(255,255,255,0.05)',border:`0.5px solid rgba(255,255,255,0.15)`,borderRadius:14,padding:'12px 28px',color:'rgba(255,255,255,0.4)',fontSize:15,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif'}}>放開取消</button>
+          )}
+          {phase==='press'&&(
+            <button onClick={onBack} style={{marginTop:30,zIndex:1,background:'none',border:'none',color:'rgba(255,255,255,0.25)',fontSize:14,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif'}}>← 返回</button>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── Elder Medication Screen ───
+// phases: ready → camera → processing → done
+function ElderMedication({ onBack }) {
+  const [phase, setPhase] = useState('ready'); // ready | camera | processing | done
+  const [shutterFlash, setShutterFlash] = useState(false);
+
+  const handleShutter = () => {
+    setShutterFlash(true);
+    setTimeout(()=>setShutterFlash(false), 180);
+    setTimeout(()=>setPhase('processing'), 300);
+    setTimeout(()=>setPhase('done'), 2200);
+  };
+
+  // ── DONE ──
+  if (phase==='done') return (
+    <div className="anim-slideUp" style={{flex:1,background:'linear-gradient(170deg,#051a0d 0%,#0a1a10 100%)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:28,gap:16}}>
+      <div style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',width:280,height:280,background:'radial-gradient(circle,rgba(34,197,94,0.18) 0%,transparent 70%)',borderRadius:'50%',pointerEvents:'none'}}/>
+      {/* fake photo thumbnail */}
+      <div style={{width:140,height:140,borderRadius:20,background:'#0a1a0a',border:`2px solid ${C.greenDim}`,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',position:'relative',overflow:'hidden',zIndex:1}}>
+        <div style={{position:'absolute',inset:0,background:'repeating-linear-gradient(45deg,rgba(34,197,94,0.03) 0px,rgba(34,197,94,0.03) 1px,transparent 1px,transparent 12px)'}}/>
+        <span style={{fontSize:44,zIndex:1}}>💊</span>
+        <div style={{position:'absolute',top:8,right:8,background:'rgba(34,197,94,0.9)',borderRadius:6,padding:'2px 7px',fontSize:11,color:'#000',fontWeight:700,zIndex:2}}>✓ 驗證</div>
+      </div>
+      <div style={{fontSize:30,fontWeight:900,color:'#fff',zIndex:1,textAlign:'center',lineHeight:1.2}}>服藥完成！</div>
+      <div style={{fontSize:15,color:'rgba(255,255,255,0.45)',zIndex:1,textAlign:'center',lineHeight:1.6}}>照片已儲存<br/>家人即時收到通知 ✉️</div>
+      <button onClick={onBack} style={{marginTop:16,padding:'14px 40px',borderRadius:16,background:'rgba(34,197,94,0.12)',border:`1px solid ${C.greenDim}`,color:C.green,fontSize:20,fontWeight:700,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif',zIndex:1}}>返回首頁</button>
+    </div>
+  );
+
+  // ── CAMERA ──
+  if (phase==='camera') return (
+    <div style={{flex:1,background:'#000',display:'flex',flexDirection:'column',position:'relative',overflow:'hidden'}}>
+      {/* shutter flash */}
+      {shutterFlash && <div style={{position:'absolute',inset:0,background:'#fff',zIndex:50,opacity:0.85}}/>}
+
+      {/* fake viewfinder */}
+      <div style={{flex:1,position:'relative',background:'#050a05',display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden'}}>
+        {/* subtle grain */}
+        <div style={{position:'absolute',inset:0,backgroundImage:'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\' opacity=\'0.08\'/%3E%3C/svg%3E")',opacity:0.5}}/>
+
+        {/* guide corners */}
+        <div style={{position:'relative',width:220,height:220}}>
+          {[['top:0,left:0','borderTop,borderLeft'],['top:0,right:0','borderTop,borderRight'],['bottom:0,left:0','borderBottom,borderLeft'],['bottom:0,right:0','borderBottom,borderRight']].map((_,i)=>{
+            const pos = [{top:0,left:0},{top:0,right:0},{bottom:0,left:0},{bottom:0,right:0}][i];
+            const brd = [{borderTop:`3px solid ${C.green}`,borderLeft:`3px solid ${C.green}`,borderTopLeftRadius:6},{borderTop:`3px solid ${C.green}`,borderRight:`3px solid ${C.green}`,borderTopRightRadius:6},{borderBottom:`3px solid ${C.green}`,borderLeft:`3px solid ${C.green}`,borderBottomLeftRadius:6},{borderBottom:`3px solid ${C.green}`,borderRight:`3px solid ${C.green}`,borderBottomRightRadius:6}][i];
+            return <div key={i} style={{position:'absolute',width:30,height:30,...pos,...brd}}/>;
+          })}
+          {/* center hint */}
+          <div style={{position:'absolute',inset:0,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:8}}>
+            <span style={{fontSize:52}}>💊</span>
+            <div style={{background:'rgba(0,0,0,0.55)',borderRadius:8,padding:'4px 12px',fontSize:13,color:'rgba(255,255,255,0.7)'}}>對準藥物</div>
+          </div>
+        </div>
+
+        {/* top bar */}
+        <div style={{position:'absolute',top:0,left:0,right:0,padding:'12px 16px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+          <button onClick={()=>setPhase('ready')} style={{width:34,height:34,borderRadius:'50%',background:'rgba(0,0,0,0.5)',border:'none',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:'rgba(255,255,255,0.7)',fontSize:18}}>✕</button>
+          <div style={{background:'rgba(0,0,0,0.55)',borderRadius:10,padding:'5px 12px',fontSize:13,color:'rgba(255,255,255,0.8)',fontFamily:'Noto Sans TC,sans-serif'}}>安眠藥・1 顆</div>
+          <div style={{width:34}}/>
+        </div>
+
+        {/* scan line animation */}
+        <div style={{position:'absolute',left:'50%',transform:'translateX(-50%)',width:220,height:2,background:`linear-gradient(90deg,transparent,${C.green},transparent)`,animation:'scanline 2s ease-in-out infinite',top:'30%'}}/>
+      </div>
+
+      {/* bottom shutter area */}
+      <div style={{background:'#000',padding:'20px 0 36px',display:'flex',flexDirection:'column',alignItems:'center',gap:6}}>
+        <div style={{fontSize:13,color:'rgba(255,255,255,0.35)',fontFamily:'Noto Sans TC,sans-serif',marginBottom:8}}>拍下藥物照片作為紀錄</div>
+        <button onClick={handleShutter} style={{width:70,height:70,borderRadius:'50%',background:'#fff',border:'4px solid rgba(255,255,255,0.3)',cursor:'pointer',WebkitTapHighlightColor:'transparent',transition:'transform 0.1s',display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <div style={{width:58,height:58,borderRadius:'50%',background:'#fff',border:'2px solid #ccc'}}/>
+        </button>
+      </div>
+
+      <style>{`@keyframes scanline{0%{top:25%}50%{top:68%}100%{top:25%}}`}</style>
+    </div>
+  );
+
+  // ── PROCESSING ──
+  if (phase==='processing') return (
+    <div style={{flex:1,background:'#050a05',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:20,padding:32}}>
+      <div style={{position:'absolute',inset:0,background:'radial-gradient(circle at 50% 50%,rgba(34,197,94,0.08) 0%,transparent 65%)'}}/>
+      <div style={{width:72,height:72,borderRadius:'50%',border:`3px solid rgba(34,197,94,0.2)`,borderTopColor:C.green,animation:'spin 0.9s linear infinite',zIndex:1}}/>
+      <div style={{zIndex:1,textAlign:'center'}}>
+        <div style={{fontSize:20,fontWeight:700,color:'#fff',marginBottom:6}}>AI 驗證中…</div>
+        <div style={{fontSize:13,color:'rgba(255,255,255,0.35)',lineHeight:1.6}}>正在辨識藥物照片<br/>請稍候片刻</div>
+      </div>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    </div>
+  );
+
+  // ── READY ──
+  return (
+    <div style={{flex:1,background:'linear-gradient(160deg,#130f00 0%,#0a0d14 55%)',display:'flex',flexDirection:'column',padding:'20px 20px 32px',overflow:'hidden'}}>
+      <button onClick={onBack} style={{alignSelf:'flex-start',background:'rgba(255,255,255,0.05)',border:`0.5px solid ${C.border}`,borderRadius:10,padding:'8px 14px',color:C.text2,fontSize:13,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif',marginBottom:16}}>← 返回</button>
+
+      <div style={{display:'flex',alignItems:'center',gap:8,background:'rgba(245,158,11,0.12)',border:`0.5px solid rgba(245,158,11,0.3)`,borderRadius:20,padding:'8px 16px',marginBottom:20,alignSelf:'flex-start'}}>
+        <div style={{width:8,height:8,background:C.amber,borderRadius:'50%'}}/>
+        <span style={{fontSize:14,color:'#fbbf24'}}>今天晚上 21:00</span>
+      </div>
+
+      <div style={{fontSize:28,fontWeight:900,color:'#fff',lineHeight:1.2,marginBottom:6}}>該吃<em style={{color:'#fbbf24',fontStyle:'normal'}}>晚間</em>的藥了</div>
+      <div style={{fontSize:14,color:'rgba(255,255,255,0.4)',marginBottom:24}}>拍下藥物照片，讓家人安心</div>
+
+      <div style={{display:'flex',flexDirection:'column',gap:12,marginBottom:'auto'}}>
+        <div style={{background:'rgba(255,255,255,0.05)',border:`0.5px solid rgba(255,255,255,0.1)`,borderRadius:16,padding:'14px 16px',display:'flex',alignItems:'center',gap:14}}>
+          <div style={{width:44,height:44,borderRadius:12,background:'rgba(239,68,68,0.12)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22}}>💊</div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:20,fontWeight:700,color:'#fff'}}>安眠藥</div>
+            <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginTop:3}}>睡前 30 分鐘服用</div>
+            <div style={{display:'inline-block',fontSize:12,fontWeight:500,color:'#fbbf24',background:'rgba(245,158,11,0.1)',borderRadius:8,padding:'3px 8px',marginTop:4}}>1 顆</div>
+          </div>
+        </div>
+
+        {/* how it works */}
+        <div style={{background:'rgba(34,197,94,0.05)',border:`0.5px solid rgba(34,197,94,0.15)`,borderRadius:12,padding:'12px 14px'}}>
+          <div style={{fontSize:11,color:C.green,fontWeight:600,letterSpacing:.5,marginBottom:8}}>拍照流程說明</div>
+          {[['1','拿起藥物放在手上'],['2','對準鏡頭，按下快門'],['3','AI 自動辨識，通知家人']].map(([n,t])=>(
+            <div key={n} style={{display:'flex',alignItems:'center',gap:10,marginBottom:6}}>
+              <div style={{width:18,height:18,borderRadius:'50%',background:'rgba(34,197,94,0.15)',border:`0.5px solid rgba(34,197,94,0.3)`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,color:C.green,fontWeight:700,flexShrink:0}}>{n}</div>
+              <span style={{fontSize:12,color:C.text2}}>{t}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{display:'flex',flexDirection:'column',gap:10,paddingTop:16}}>
+        <button onClick={()=>setPhase('camera')} style={{width:'100%',padding:'20px',borderRadius:18,background:'linear-gradient(135deg,#166534,#14532d)',color:'#fff',border:`1.5px solid rgba(34,197,94,0.4)`,fontSize:22,fontWeight:900,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif',WebkitTapHighlightColor:'transparent',display:'flex',alignItems:'center',justifyContent:'center',gap:10}}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          📸 拍照確認服藥
+        </button>
+        <button onClick={()=>setPhase('done')} style={{width:'100%',padding:'13px',borderRadius:14,background:'rgba(255,255,255,0.04)',border:`0.5px solid rgba(255,255,255,0.08)`,color:'rgba(255,255,255,0.3)',fontSize:14,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif'}}>
+          略過拍照，直接確認
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ElderApp({ onSwitchMode }) {
+  const [screen, setScreen] = useState('home');
+  return (
+    <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+      {screen==='home'    && <ElderHome onSOS={()=>setScreen('sos')} onMed={()=>setScreen('med')} onConfirm={()=>{}} onHealth={()=>setScreen('health')} onAppt={()=>setScreen('appt')}/>}
+      {screen==='sos'     && <ElderSOS onBack={()=>setScreen('home')}/>}
+      {screen==='med'     && <ElderMedication onBack={()=>setScreen('home')}/>}
+      {screen==='health'  && <ElderHealthInput onBack={()=>setScreen('home')}/>}
+      {screen==='appt'    && <ElderAppointmentView onBack={()=>setScreen('home')}/>}
+      {screen==='home' && (
+        <div style={{position:'absolute',top:36,right:14,zIndex:60}}>
+          <button onClick={onSwitchMode} style={{background:'rgba(20,184,166,0.12)',border:`0.5px solid ${C.tealDim}`,borderRadius:8,padding:'5px 10px',fontSize:10,color:C.teal,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif'}}>子女端</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════
+// DRUM PICKER (shared)
+// ═══════════════════════════════════
+function DrumPicker({ value, min, max, step=5, onChange, color='#c084fc', label }) {
+  const clamp = v => Math.min(max, Math.max(min, v));
+  const vals = [-2,-1,0,1,2].map(i => value + i*step);
+  return (
+    <div style={{display:'flex',flexDirection:'column',alignItems:'center',background:C.card2,border:`0.5px solid ${C.border2}`,borderRadius:12,padding:'6px 8px',minWidth:64}}>
+      {label && <div style={{fontSize:10,color:C.text3,marginBottom:4,letterSpacing:.5}}>{label}</div>}
+      <div style={{position:'relative',height:64,width:52,overflow:'hidden'}}>
+        <div style={{position:'absolute',top:0,left:0,right:0,height:18,background:`linear-gradient(to bottom,${C.card2},transparent)`,zIndex:2,pointerEvents:'none'}}/>
+        <div style={{position:'absolute',bottom:0,left:0,right:0,height:18,background:`linear-gradient(to top,${C.card2},transparent)`,zIndex:2,pointerEvents:'none'}}/>
+        <div style={{position:'absolute',top:'50%',left:4,right:4,height:0.5,background:C.amber,transform:'translateY(-16px)',zIndex:3}}/>
+        <div style={{position:'absolute',top:'50%',left:4,right:4,height:0.5,background:C.amber,transform:'translateY(15px)',zIndex:3}}/>
+        {vals.map((v,i)=>(
+          <div key={i} style={{position:'absolute',top:i*32,left:0,right:0,height:32,display:'flex',alignItems:'center',justifyContent:'center',fontSize:i===2?22:16,fontWeight:i===2?700:400,color:i===2&&v>=min&&v<=max?color:C.text3,opacity:v>=min&&v<=max?1:0.12}}>
+            {v>=min&&v<=max?v:''}
+          </div>
+        ))}
+      </div>
+      <div style={{display:'flex',gap:6,marginTop:5}}>
+        {[[-1,<svg key="u" width="10" height="6" viewBox="0 0 10 6"><path d="M1 5l4-4 4 4" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round"/></svg>],[1,<svg key="d" width="10" height="6" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round"/></svg>]].map(([d,icon])=>(
+          <button key={d} onClick={()=>onChange(clamp(value+d*step))} style={{width:28,height:28,borderRadius:8,background:C.card,border:`0.5px solid ${C.border2}`,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:C.text2}}>{icon}</button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════
+// HEALTH VITALS SCREEN (caregiver)
+// ═══════════════════════════════════
+function HealthVitalsScreen() {
+  const [records, setRecords] = useState([
+    {date:'今天 09:15',bp:'120/80',bs:'5.6',ctx:'空腹',bpC:C.green,bsC:C.green},
+    {date:'今天 09:20',bp:'—',bs:'7.8',ctx:'餐後',bpC:C.text3,bsC:C.amber},
+    {date:'昨天 08:50',bp:'118/76',bs:'6.2',ctx:'餐後',bpC:C.green,bsC:C.green},
+    {date:'前天 09:02',bp:'135/88',bs:'—',ctx:'',bpC:C.red,bsC:C.text3},
+  ]);
+  const [showAdd, setShowAdd] = useState(false);
+  const [addMode, setAddMode] = useState('bp');
+  const [addSys, setAddSys] = useState('');
+  const [addDia, setAddDia] = useState('');
+  const [addBs, setAddBs] = useState('');
+  const [addCtx, setAddCtx] = useState('空腹');
+  const [addSaved, setAddSaved] = useState(false);
+
+  const bpStatus = (s,d) => {
+    if(!s||!d) return {c:C.text3};
+    if(+s>=140||+d>=90) return {c:C.red};
+    if(+s>=130||+d>=80) return {c:C.amber};
+    return {c:C.green};
+  };
+  const bsStatus = v => {
+    if(!v) return {c:C.text3};
+    if(+v>9) return {c:C.red};
+    if(+v>7.8) return {c:C.amber};
+    return {c:C.green};
+  };
+
+  const saveEntry = () => {
+    const now = new Date();
+    const timeStr = `今天 ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+    const bp = addMode==='bp' && addSys && addDia ? `${addSys}/${addDia}` : '—';
+    const bs = addMode==='bs' && addBs ? addBs : '—';
+    const ctx = addMode==='bs' ? addCtx : '';
+    const {c:bpC} = bpStatus(addSys,addDia);
+    const {c:bsC} = bsStatus(addBs);
+    setRecords(r=>[{date:timeStr,bp,bs,ctx,bpC,bsC},...r]);
+    setAddSaved(true);
+    setTimeout(()=>{setShowAdd(false);setAddSaved(false);setAddSys('');setAddDia('');setAddBs('');},900);
+  };
+
+  const bpData = [{d:'日',sys:126,hi:false},{d:'一',sys:118,hi:false},{d:'二',sys:122,hi:false},{d:'三',sys:135,hi:true},{d:'四',sys:128,hi:false},{d:'五',sys:120,hi:false},{d:'六',sys:124,hi:false}];
+  const bsData = [5.6,7.8,6.2,5.8,7.1,6.0,5.9];
+  const bpPts = bpData.map((d,i)=>`${i*34+17},${50-(d.sys-110)*1.4}`).join(' ');
+  const bsPts = bsData.map((v,i)=>`${i*34+17},${48-(v-3.5)*8}`).join(' ');
+
+  return (
+    <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden',position:'relative'}}>
+      <div style={{flex:1,overflowY:'auto',paddingBottom:80}}>
+        <div style={{padding:'14px 16px 10px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+          <span style={{fontSize:18,fontWeight:700}}>健康數值</span>
+          <button onClick={()=>setShowAdd(true)} style={{display:'flex',alignItems:'center',gap:5,background:'rgba(168,85,247,0.1)',border:'0.5px solid rgba(168,85,247,0.3)',borderRadius:8,padding:'6px 11px',color:'#c084fc',fontSize:12,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif'}}>
+            {Icon.plus} 手動新增
+          </button>
+        </div>
+        <div style={{padding:'0 16px',display:'flex',flexDirection:'column',gap:12}}>
+          {/* BP card */}
+          <div style={{background:C.card,border:'0.5px solid rgba(168,85,247,0.2)',borderRadius:14,padding:'14px 16px'}}>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
+              <span style={{fontSize:12,color:C.text2}}>🩺 血壓</span>
+              <span style={{fontSize:11,background:'rgba(34,197,94,0.1)',border:'0.5px solid rgba(34,197,94,0.25)',borderRadius:20,padding:'3px 9px',color:C.green}}>● 正常</span>
+            </div>
+            <div style={{display:'flex',alignItems:'baseline',gap:4,marginBottom:4}}>
+              <span style={{fontSize:32,fontWeight:700,color:'#c084fc'}}>120</span>
+              <span style={{fontSize:18,color:C.text3}}>/</span>
+              <span style={{fontSize:24,fontWeight:500,color:'rgba(168,85,247,0.65)'}}>80</span>
+              <span style={{fontSize:11,color:C.text3,marginLeft:4}}>mmHg</span>
+            </div>
+            <div style={{fontSize:11,color:C.text3,marginBottom:8}}>今天 09:15 量測</div>
+            <svg width="100%" height="48" viewBox="0 0 240 48" preserveAspectRatio="none">
+              <polyline points={bpPts} fill="none" stroke="rgba(168,85,247,0.25)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+              <polyline points={bpPts} fill="none" stroke="#c084fc" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <line x1="0" y1="18" x2="240" y2="18" stroke="rgba(239,68,68,0.2)" strokeWidth="0.5" strokeDasharray="3 3"/>
+              <circle cx={5*34+17} cy={50-(120-110)*1.4} r="3" fill="#c084fc"/>
+            </svg>
+            <div style={{marginTop:10}}>
+              <div style={{fontSize:10,color:C.text3,marginBottom:6,letterSpacing:.5}}>7 天收縮壓</div>
+              <div style={{display:'flex',alignItems:'flex-end',gap:4,height:44}}>
+                {bpData.map((d,i)=>{
+                  const h=Math.round(((d.sys-110)/45)*40)+4;
+                  return <div key={i} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:3}}><div style={{width:'100%',height:h,borderRadius:'3px 3px 0 0',background:d.hi?'rgba(239,68,68,0.55)':'rgba(168,85,247,0.4)'}}/><span style={{fontSize:9,color:d.hi?C.red:C.text3}}>{d.d}</span></div>;
+                })}
+              </div>
+            </div>
+            <div style={{marginTop:10,background:C.card2,border:`0.5px solid ${C.border}`,borderRadius:8,padding:'8px 10px',fontSize:11,color:C.text2,lineHeight:1.6}}>
+              正常：收縮壓 &lt;130　舒張壓 &lt;80<br/><span style={{color:C.amber}}>注意：130–139</span>　<span style={{color:C.red}}>偏高：≥140</span>
+            </div>
+          </div>
+          {/* BS card */}
+          <div style={{background:C.card,border:'0.5px solid rgba(245,158,11,0.2)',borderRadius:14,padding:'14px 16px'}}>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
+              <span style={{fontSize:12,color:C.text2}}>🩸 血糖</span>
+              <span style={{fontSize:11,background:C.amberGlow,border:`0.5px solid ${C.amberDim}`,borderRadius:20,padding:'3px 9px',color:C.amber}}>● 偏高（餐後）</span>
+            </div>
+            <div style={{display:'flex',alignItems:'baseline',gap:4,marginBottom:4}}>
+              <span style={{fontSize:32,fontWeight:700,color:'#fcd34d'}}>7.8</span>
+              <span style={{fontSize:14,color:C.text3,marginLeft:4}}>mmol/L</span>
+            </div>
+            <div style={{fontSize:11,color:C.text3,marginBottom:8}}>今天 09:20 · 餐後</div>
+            <svg width="100%" height="48" viewBox="0 0 240 48" preserveAspectRatio="none">
+              <polyline points={bsPts} fill="none" stroke="rgba(245,158,11,0.25)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+              <polyline points={bsPts} fill="none" stroke="#fcd34d" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <circle cx={1*34+17} cy={48-(7.8-3.5)*8} r="3" fill="#fcd34d"/>
+            </svg>
+            <div style={{marginTop:10}}>
+              <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:C.text3,marginBottom:4}}><span>正常範圍</span><span>餐後 &lt; 7.8</span></div>
+              <div style={{height:6,borderRadius:3,background:C.card2,position:'relative',overflow:'hidden'}}>
+                <div style={{position:'absolute',left:0,top:0,bottom:0,width:'60%',background:C.green,borderRadius:3,opacity:.4}}/>
+                <div style={{position:'absolute',top:-1,bottom:-1,width:3,borderRadius:2,background:'#fcd34d',left:'72%'}}/>
+              </div>
+              <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:C.text3,marginTop:3}}><span>4.0</span><span>7.0</span><span>11.0+</span></div>
+            </div>
+          </div>
+          {/* record table */}
+          <div style={{background:C.card,border:`0.5px solid ${C.border}`,borderRadius:14,padding:'14px 16px'}}>
+            <div style={{fontSize:11,color:C.text3,letterSpacing:1.5,textTransform:'uppercase',marginBottom:12}}>統一紀錄</div>
+            <table style={{width:'100%',borderCollapse:'collapse',fontSize:12}}>
+              <thead><tr style={{borderBottom:`0.5px solid ${C.border}`}}>
+                {['時間','血壓','血糖','情境'].map(h=><th key={h} style={{color:C.text3,fontWeight:500,padding:'0 0 8px',textAlign:'left'}}>{h}</th>)}
+              </tr></thead>
+              <tbody>
+                {records.map((r,i)=>(
+                  <tr key={i} style={{borderBottom:i<records.length-1?`0.5px solid ${C.border}`:'none'}}>
+                    <td style={{padding:'8px 4px 8px 0',color:C.text3,whiteSpace:'nowrap',fontSize:11}}>{r.date}</td>
+                    <td style={{padding:'8px 4px',fontWeight:500,color:r.bpC}}>{r.bp}</td>
+                    <td style={{padding:'8px 4px',fontWeight:500,color:r.bsC}}>{r.bs}</td>
+                    <td style={{padding:'8px 0',color:C.text3}}>{r.ctx}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {/* manual entry overlay */}
+      {showAdd && (
+        <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,0.65)',display:'flex',flexDirection:'column',justifyContent:'flex-end',zIndex:100}} onClick={e=>{if(e.target===e.currentTarget)setShowAdd(false);}}>
+          <div className="anim-slideUp" style={{background:C.surface,borderRadius:'20px 20px 0 0',border:`0.5px solid ${C.border2}`,padding:'18px 18px 36px'}}>
+            <div style={{width:36,height:3,background:C.border2,borderRadius:2,margin:'0 auto 14px'}}/>
+            <div style={{fontSize:15,fontWeight:700,marginBottom:14}}>手動新增量測</div>
+            <div style={{display:'flex',background:C.card2,border:`0.5px solid ${C.border}`,borderRadius:10,padding:4,marginBottom:14}}>
+              {[['bp','🩺 血壓'],['bs','🩸 血糖']].map(([m,l])=>(
+                <button key={m} onClick={()=>setAddMode(m)} style={{flex:1,padding:'9px',borderRadius:8,background:addMode===m?C.card:'transparent',border:`0.5px solid ${addMode===m?C.border2:'transparent'}`,color:addMode===m?C.text:C.text3,fontSize:13,fontWeight:addMode===m?600:400,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif',transition:'all .15s'}}>{l}</button>
+              ))}
+            </div>
+            {addMode==='bp' ? (
+              <div style={{display:'grid',gridTemplateColumns:'1fr auto 1fr',gap:8,alignItems:'center',marginBottom:14}}>
+                <div>
+                  <div style={{fontSize:10,color:C.text3,marginBottom:5}}>收縮壓（高壓）</div>
+                  <input type="number" value={addSys} onChange={e=>setAddSys(e.target.value)} placeholder="120" style={{width:'100%',background:C.card2,border:`0.5px solid rgba(168,85,247,0.3)`,borderRadius:10,padding:'12px',color:'#c084fc',fontSize:22,fontWeight:700,fontFamily:'Syne,sans-serif',outline:'none',textAlign:'center'}}/>
+                </div>
+                <span style={{fontSize:24,color:C.text3,fontWeight:300,paddingTop:20}}>/</span>
+                <div>
+                  <div style={{fontSize:10,color:C.text3,marginBottom:5}}>舒張壓（低壓）</div>
+                  <input type="number" value={addDia} onChange={e=>setAddDia(e.target.value)} placeholder="80" style={{width:'100%',background:C.card2,border:`0.5px solid rgba(168,85,247,0.2)`,borderRadius:10,padding:'12px',color:'#a78bfa',fontSize:22,fontWeight:700,fontFamily:'Syne,sans-serif',outline:'none',textAlign:'center'}}/>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div style={{display:'flex',gap:6,marginBottom:12}}>
+                  {['空腹','餐後','睡前'].map(c=><button key={c} onClick={()=>setAddCtx(c)} style={{flex:1,padding:'9px',borderRadius:10,background:addCtx===c?C.amberGlow:C.card2,border:`0.5px solid ${addCtx===c?C.amberDim:C.border}`,color:addCtx===c?C.amber:C.text3,fontSize:13,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif',transition:'all .15s'}}>{c}</button>)}
+                </div>
+                <input type="number" step="0.1" value={addBs} onChange={e=>setAddBs(e.target.value)} placeholder="7.8" style={{width:'100%',background:C.card2,border:`0.5px solid rgba(245,158,11,0.3)`,borderRadius:10,padding:'14px',color:'#fcd34d',fontSize:28,fontWeight:700,fontFamily:'Syne,sans-serif',outline:'none',textAlign:'center',marginBottom:12}}/>
+              </>
+            )}
+            <div style={{display:'flex',gap:8}}>
+              <button onClick={()=>setShowAdd(false)} style={{flex:1,padding:'12px',borderRadius:10,background:C.card2,border:`0.5px solid ${C.border2}`,color:C.text2,fontSize:14,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif'}}>取消</button>
+              <button onClick={saveEntry} style={{flex:2,padding:'12px',borderRadius:10,background:addSaved?C.greenGlow:'rgba(168,85,247,0.15)',border:`0.5px solid ${addSaved?C.greenDim:'rgba(168,85,247,0.35)'}`,color:addSaved?C.green:'#d8b4fe',fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif',transition:'all .3s'}}>
+                {addSaved ? '✓ 已儲存' : '儲存紀錄'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════
+// APPOINTMENTS SCREEN (caregiver)
+// ═══════════════════════════════════
+function AppointmentsScreen() {
+  const todayD = new Date();
+  const [viewMonth, setViewMonth] = useState(todayD.getMonth());
+  const [viewYear, setViewYear] = useState(todayD.getFullYear());
+  const [selDay, setSelDay] = useState(todayD.getDate());
+  const [showDrawer, setShowDrawer] = useState(false);
+  const [appts, setAppts] = useState([
+    {id:1,day:22,month:4,year:2026,time:'10:30',dept:'心臟科複診',hospital:'台大醫院',note:'記得空腹，帶健保卡',daysLeft:2,urgency:'amber',done:false},
+    {id:2,day:8,month:5,year:2026,time:'14:00',dept:'年度健檢',hospital:'仁愛醫院',note:'全套健檢，需要半天',daysLeft:18,urgency:'teal',done:false},
+    {id:3,day:20,month:5,year:2026,time:'09:00',dept:'內分泌科',hospital:'台大醫院',note:'帶上次血糖紀錄',daysLeft:30,urgency:'blue',done:false},
+  ]);
+  const [newDept, setNewDept] = useState('心臟科');
+  const [newDate, setNewDate] = useState('');
+  const [newTime, setNewTime] = useState('10:00');
+  const [newHosp, setNewHosp] = useState('');
+  const [newNote2, setNewNote2] = useState('');
+  const [reminders, setReminders] = useState(['1天前']);
+
+  const depts = ['心臟科','內分泌科','骨科','眼科','一般科','其他'];
+  const reminderOpts = ['當天','1天前','3天前','1週前'];
+  const monthNames = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  const daysInMonth = new Date(viewYear, viewMonth+1, 0).getDate();
+  const firstDay = new Date(viewYear, viewMonth, 1).getDay();
+  const apptDays = new Set(appts.filter(a=>a.month-1===viewMonth&&a.year===viewYear&&!a.done).map(a=>a.day));
+  const urgColor = a => a.done?C.green:a.urgency==='amber'?C.amber:a.urgency==='teal'?C.teal:C.blue;
+  const markDone = id => setAppts(a=>a.map(x=>x.id===id?{...x,done:true}:x));
+  const delAppt = id => setAppts(a=>a.filter(x=>x.id!==id));
+  const toggleRem = r => setReminders(rs => rs.includes(r) ? rs.filter(x=>x!==r) : [...rs,r]);
+
+  const saveAppt = () => {
+    if(!newDate) return;
+    const d = new Date(newDate);
+    const diff = Math.ceil((d - new Date())/(1000*60*60*24));
+    setAppts(p=>[...p,{id:Date.now(),day:d.getDate(),month:d.getMonth()+1,year:d.getFullYear(),time:newTime,dept:newDept,hospital:newHosp||'待確認',note:newNote2,daysLeft:diff,urgency:diff<=3?'amber':diff<=14?'teal':'blue',done:false}]);
+    setShowDrawer(false); setNewDate(''); setNewHosp(''); setNewNote2('');
+  };
+
+  return (
+    <div style={{flex:1,overflowY:'auto',paddingBottom:80,position:'relative'}}>
+      {/* calendar */}
+      <div style={{padding:'14px 16px 10px'}}>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
+          <span style={{fontFamily:'Syne,sans-serif',fontSize:16,fontWeight:700}}>{viewYear}年 {monthNames[viewMonth]}</span>
+          <div style={{display:'flex',gap:6}}>
+            {[[-1,'‹'],[1,'›']].map(([d,l])=>(
+              <button key={d} onClick={()=>{let m=viewMonth+d,y=viewYear;if(m<0){m=11;y--;}if(m>11){m=0;y++;}setViewMonth(m);setViewYear(y);}} style={{width:28,height:28,borderRadius:8,background:C.card2,border:`0.5px solid ${C.border2}`,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:C.text2,fontSize:16}}>{l}</button>
+            ))}
+          </div>
+        </div>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:3,marginBottom:4}}>
+          {['日','一','二','三','四','五','六'].map(d=><div key={d} style={{textAlign:'center',fontSize:10,color:C.text3,padding:'2px 0'}}>{d}</div>)}
+        </div>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:3}}>
+          {Array(firstDay).fill(null).map((_,i)=><div key={'e'+i}/>)}
+          {Array.from({length:daysInMonth},(_,i)=>i+1).map(d=>{
+            const isToday = d===todayD.getDate()&&viewMonth===todayD.getMonth()&&viewYear===todayD.getFullYear();
+            const hasDot = apptDays.has(d);
+            const isSel = d===selDay;
+            return (
+              <div key={d} onClick={()=>setSelDay(d)} style={{height:30,borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,cursor:'pointer',position:'relative',background:isSel?'rgba(59,130,246,0.15)':isToday?C.card2:'transparent',color:isSel?C.blue:isToday?C.text:C.text3,border:isSel?'0.5px solid rgba(59,130,246,0.3)':'0.5px solid transparent',fontWeight:isToday||isSel?700:400,transition:'all .12s'}}>
+                {d}
+                {(hasDot||isToday) && <div style={{position:'absolute',bottom:2,left:'50%',transform:'translateX(-50%)',width:4,height:4,borderRadius:'50%',background:hasDot?C.amber:C.blue}}/>}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* upcoming list */}
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 16px 8px'}}>
+        <span style={{fontSize:12,color:C.text2}}>即將到來的回診</span>
+        <button onClick={()=>setShowDrawer(true)} style={{display:'flex',alignItems:'center',gap:5,background:'rgba(59,130,246,0.1)',border:'0.5px solid rgba(59,130,246,0.3)',borderRadius:8,padding:'5px 10px',color:C.blue,fontSize:12,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif'}}>+ 新增行程</button>
+      </div>
+      <div style={{padding:'0 16px',display:'flex',flexDirection:'column',gap:10}}>
+        {appts.map(a=>(
+          <div key={a.id} style={{background:a.done?'rgba(34,197,94,0.04)':a.urgency==='amber'?C.amberGlow:'rgba(59,130,246,0.06)',border:`0.5px solid ${urgColor(a)}30`,borderRadius:14,padding:'12px 14px',display:'flex',gap:12,position:'relative',overflow:'hidden',opacity:a.done?0.5:1,transition:'opacity .3s'}}>
+            <div style={{position:'absolute',left:0,top:0,bottom:0,width:3,background:urgColor(a),borderRadius:'14px 0 0 14px'}}/>
+            <div style={{background:C.card2,border:`0.5px solid ${C.border}`,borderRadius:10,padding:'7px 9px',textAlign:'center',minWidth:44,flexShrink:0,marginLeft:8}}>
+              <div style={{fontSize:20,fontWeight:900,lineHeight:1,color:C.text}}>{a.day}</div>
+              <div style={{fontSize:10,color:C.text3,marginTop:1}}>{a.month}月</div>
+            </div>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:4}}>
+                <div style={{fontSize:14,fontWeight:700}}>{a.dept}</div>
+                <span style={{fontSize:10,color:a.done?C.green:a.daysLeft<=3?C.amber:C.text3,flexShrink:0,marginLeft:8}}>{a.done?'✓ 完成':`${a.daysLeft}天後`}</span>
+              </div>
+              <div style={{fontSize:12,color:C.text2,marginBottom:3}}>{a.hospital} · {a.time}</div>
+              {a.note && <div style={{fontSize:11,color:C.text3,fontStyle:'italic'}}>{a.note}</div>}
+              {!a.done && (
+                <div style={{display:'flex',gap:6,marginTop:8}}>
+                  <button onClick={()=>markDone(a.id)} style={{fontSize:11,borderRadius:6,padding:'4px 9px',background:C.greenGlow,border:`0.5px solid ${C.greenDim}`,color:C.green,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif'}}>標為完成</button>
+                  <button onClick={()=>delAppt(a.id)} style={{fontSize:11,borderRadius:6,padding:'4px 9px',background:C.redGlow,border:`0.5px solid ${C.redDim}`,color:C.red,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif'}}>刪除</button>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* past records */}
+      <div style={{padding:'14px 16px 8px',fontSize:12,color:C.text2}}>過去紀錄</div>
+      <div style={{margin:'0 16px',background:C.card,border:`0.5px solid ${C.border}`,borderRadius:14,padding:'12px 14px'}}>
+        {[{d:'4/3',name:'心臟科複診',note:'血壓控制良好',s:'已完成'},{d:'3/18',name:'骨科回診',note:'X 光正常',s:'已完成'},{d:'3/5',name:'年度健檢',note:'血糖稍偏高，需追蹤',s:'需追蹤'}].map((r,i)=>(
+          <div key={i} style={{display:'flex',alignItems:'center',gap:10,padding:'9px 0',borderBottom:i<2?`0.5px solid ${C.border}`:'none'}}>
+            <span style={{fontSize:11,color:C.text3,minWidth:44}}>{r.d}</span>
+            <div style={{flex:1}}><div style={{fontSize:13,fontWeight:500}}>{r.name}</div><div style={{fontSize:11,color:C.text3,fontStyle:'italic',marginTop:1}}>{r.note}</div></div>
+            <span style={{fontSize:11,color:r.s==='需追蹤'?C.amber:C.green,background:r.s==='需追蹤'?C.amberGlow:C.greenGlow,border:`0.5px solid ${r.s==='需追蹤'?C.amberDim:C.greenDim}`,borderRadius:20,padding:'3px 8px',flexShrink:0}}>{r.s}</span>
+          </div>
+        ))}
+      </div>
+      <div style={{height:10}}/>
+
+      {/* add drawer */}
+      {showDrawer && (
+        <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,0.65)',display:'flex',flexDirection:'column',justifyContent:'flex-end',zIndex:100}} onClick={e=>{if(e.target===e.currentTarget)setShowDrawer(false);}}>
+          <div className="anim-slideUp" style={{background:C.surface,borderRadius:'20px 20px 0 0',border:`0.5px solid ${C.border2}`,padding:'18px 18px 36px',maxHeight:'85%',overflowY:'auto'}}>
+            <div style={{width:36,height:3,background:C.border2,borderRadius:2,margin:'0 auto 16px'}}/>
+            <div style={{fontSize:15,fontWeight:700,marginBottom:14}}>新增回診行程</div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:12}}>
+              {[['日期','date',newDate,setNewDate],['時間','time',newTime,setNewTime]].map(([lbl,type,val,setter])=>(
+                <div key={lbl}>
+                  <div style={{fontSize:11,color:C.text3,marginBottom:5,letterSpacing:.5}}>{lbl}</div>
+                  <input type={type} value={val} onChange={e=>setter(e.target.value)} style={{width:'100%',background:C.card2,border:`0.5px solid ${C.border2}`,borderRadius:10,padding:'9px 12px',color:C.text,fontSize:13,fontFamily:'Noto Sans TC,sans-serif',outline:'none',colorScheme:'dark'}}/>
+                </div>
+              ))}
+            </div>
+            <div style={{marginBottom:12}}>
+              <div style={{fontSize:11,color:C.text3,marginBottom:6,letterSpacing:.5}}>科別</div>
+              <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+                {depts.map(d=><button key={d} onClick={()=>setNewDept(d)} style={{padding:'5px 11px',borderRadius:20,fontSize:12,cursor:'pointer',background:newDept===d?'rgba(59,130,246,0.12)':C.card2,border:`0.5px solid ${newDept===d?'rgba(59,130,246,0.3)':C.border2}`,color:newDept===d?C.blue:C.text3,fontFamily:'Noto Sans TC,sans-serif',transition:'all .12s'}}>{d}</button>)}
+              </div>
+            </div>
+            {[['醫院 / 診所','例：台大醫院',newHosp,setNewHosp],['備註（給長輩看）','例：記得空腹、帶健保卡',newNote2,setNewNote2]].map(([lbl,ph,val,setter])=>(
+              <div key={lbl} style={{marginBottom:10}}>
+                <div style={{fontSize:11,color:C.text3,marginBottom:5,letterSpacing:.5}}>{lbl}</div>
+                <input value={val} onChange={e=>setter(e.target.value)} placeholder={ph} style={{width:'100%',background:C.card2,border:`0.5px solid ${C.border2}`,borderRadius:10,padding:'9px 12px',color:C.text,fontSize:13,fontFamily:'Noto Sans TC,sans-serif',outline:'none'}}/>
+              </div>
+            ))}
+            <div style={{marginBottom:14}}>
+              <div style={{fontSize:11,color:C.text3,marginBottom:6,letterSpacing:.5}}>提前提醒</div>
+              <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+                {reminderOpts.map(r=><button key={r} onClick={()=>toggleRem(r)} style={{padding:'5px 10px',borderRadius:8,fontSize:12,cursor:'pointer',background:reminders.includes(r)?C.amberGlow:C.card2,border:`0.5px solid ${reminders.includes(r)?C.amberDim:C.border2}`,color:reminders.includes(r)?C.amber:C.text3,fontFamily:'Noto Sans TC,sans-serif',transition:'all .12s'}}>{r}</button>)}
+              </div>
+            </div>
+            <div style={{display:'flex',gap:8}}>
+              <button onClick={()=>setShowDrawer(false)} style={{flex:1,padding:'12px',borderRadius:10,background:C.card2,border:`0.5px solid ${C.border2}`,color:C.text2,fontSize:14,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif'}}>取消</button>
+              <button onClick={saveAppt} style={{flex:2,padding:'12px',borderRadius:10,background:'rgba(59,130,246,0.2)',border:'1px solid rgba(59,130,246,0.35)',color:'#93c5fd',fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif'}}>儲存行程</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════
+// ELDER HEALTH INPUT (Elder-Friendly Redesign)
+// ═══════════════════════════════════
+function ElderHealthInput({ onBack }) {
+  const [mode, setMode] = useState('bp');
+  const [bpSys, setBpSys] = useState(120);
+  const [bpDia, setBpDia] = useState(80);
+  const [bs, setBs] = useState(7.8);
+  const [bsCtx, setBsCtx] = useState('post');
+  const [saved, setSaved] = useState(false);
+  const holdRef = useRef(null);
+
+  const bpStat = () => {
+    if(bpSys>=140||bpDia>=90) return {label:'偏高',color:C.red,bg:C.redGlow,bd:C.redDim};
+    if(bpSys>=130||bpDia>=80) return {label:'注意',color:C.amber,bg:C.amberGlow,bd:C.amberDim};
+    return {label:'正常',color:C.green,bg:C.greenGlow,bd:C.greenDim};
+  };
+  const bsStat = () => {
+    const thr = bsCtx==='pre'?6.1:bsCtx==='post'?7.8:6.9;
+    if(bs>thr+2) return {label:'過高',color:C.red,bg:C.redGlow,bd:C.redDim};
+    if(bs>thr)   return {label:'偏高',color:C.amber,bg:C.amberGlow,bd:C.amberDim};
+    return {label:'正常',color:C.green,bg:C.greenGlow,bd:C.greenDim};
+  };
+  const stat = mode==='bp' ? bpStat() : bsStat();
+
+  // Hold-to-repeat logic
+  const startHold = (fn) => {
+    fn();
+    holdRef.current = setInterval(fn, 120);
+  };
+  const stopHold = () => { if(holdRef.current) clearInterval(holdRef.current); };
+  useEffect(() => () => stopHold(), []);
+
+  const handleSave = () => { setSaved(true); setTimeout(onBack, 1400); };
+
+  // Large +/- button
+  const AdjBtn = ({label, color, onStart}) => (
+    <button
+      onMouseDown={()=>startHold(onStart)} onMouseUp={stopHold} onMouseLeave={stopHold}
+      onTouchStart={e=>{e.preventDefault();startHold(onStart);}} onTouchEnd={stopHold}
+      style={{width:76,height:76,borderRadius:'50%',background:'rgba(255,255,255,0.07)',
+        border:`2px solid ${color}50`,color,fontSize:36,fontWeight:300,cursor:'pointer',
+        display:'flex',alignItems:'center',justifyContent:'center',
+        userSelect:'none',WebkitTapHighlightColor:'transparent',transition:'transform 0.08s, background 0.08s',
+        flexShrink:0}}
+    >{label}</button>
+  );
+
+  // One value row (label, value display, +/- buttons)
+  const ValueRow = ({label, hint, value, color, onUp, onDn, unit}) => (
+    <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:10}}>
+      <div style={{textAlign:'center'}}>
+        <div style={{fontSize:15,fontWeight:600,color:'rgba(255,255,255,0.75)'}}>{label}</div>
+        {hint && <div style={{fontSize:12,color:C.text3,marginTop:2}}>{hint}</div>}
+      </div>
+      <AdjBtn label="+" color={color} onStart={onUp}/>
+      <div style={{fontSize:76,fontWeight:700,color,lineHeight:1,fontFamily:'Syne,sans-serif',minWidth:110,textAlign:'center'}}>{value}</div>
+      <AdjBtn label="−" color={color} onStart={onDn}/>
+    </div>
+  );
+
+  return (
+    <div style={{flex:1,background:'linear-gradient(170deg,#0d1520 0%,#0a0d14 100%)',display:'flex',flexDirection:'column',padding:'14px 20px 22px',overflowY:'auto'}}>
+      {/* header */}
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14,flexShrink:0}}>
+        <button onClick={onBack} style={{background:'rgba(255,255,255,0.06)',border:`0.5px solid ${C.border}`,borderRadius:10,padding:'8px 14px',color:C.text2,fontSize:14,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif'}}>← 返回</button>
+        <div style={{display:'flex',alignItems:'center',gap:6,background:stat.bg,border:`0.5px solid ${stat.bd}`,borderRadius:20,padding:'6px 14px',fontSize:14,fontWeight:700,color:stat.color}}>
+          <div style={{width:9,height:9,background:stat.color,borderRadius:'50%'}}/>
+          {stat.label}
+        </div>
+      </div>
+
+      {/* mode toggle — big tabs */}
+      <div style={{display:'flex',background:C.card2,border:`0.5px solid ${C.border}`,borderRadius:14,padding:5,marginBottom:18,flexShrink:0}}>
+        {[['bp','🩺 血壓'],['bs','🩸 血糖']].map(([m,l])=>(
+          <button key={m} onClick={()=>{setMode(m);setSaved(false);}} style={{flex:1,padding:'13px 0',borderRadius:10,background:mode===m?C.card:'transparent',border:`0.5px solid ${mode===m?C.border2:'transparent'}`,color:mode===m?C.text:C.text3,fontSize:17,fontWeight:mode===m?700:400,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif',transition:'all .2s'}}>{l}</button>
+        ))}
+      </div>
+
+      {/* ── Blood Pressure ── Horizontal layout, fits without scroll */}
+      {mode==='bp' && (() => {
+        const BpCol = ({label, hint, value, color, onUp, onDn}) => (
+          <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:8}}>
+            <div style={{textAlign:'center'}}>
+              <div style={{fontSize:15,fontWeight:700,color:'rgba(255,255,255,0.85)'}}>{label}</div>
+              <div style={{fontSize:11,color:C.text3,marginTop:1}}>{hint}</div>
+            </div>
+            <button
+              onMouseDown={()=>startHold(onUp)} onMouseUp={stopHold} onMouseLeave={stopHold}
+              onTouchStart={e=>{e.preventDefault();startHold(onUp);}} onTouchEnd={stopHold}
+              style={{width:58,height:58,borderRadius:'50%',background:'rgba(255,255,255,0.07)',border:`2px solid ${color}50`,color,fontSize:30,fontWeight:300,cursor:'pointer',userSelect:'none',WebkitTapHighlightColor:'transparent',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center'}}
+            >+</button>
+            <div style={{fontSize:68,fontWeight:700,color,lineHeight:1,fontFamily:'Syne,sans-serif',minWidth:96,textAlign:'center'}}>{value}</div>
+            <button
+              onMouseDown={()=>startHold(onDn)} onMouseUp={stopHold} onMouseLeave={stopHold}
+              onTouchStart={e=>{e.preventDefault();startHold(onDn);}} onTouchEnd={stopHold}
+              style={{width:58,height:58,borderRadius:'50%',background:'rgba(255,255,255,0.07)',border:`2px solid ${color}50`,color,fontSize:30,fontWeight:300,cursor:'pointer',userSelect:'none',WebkitTapHighlightColor:'transparent',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center'}}
+            >−</button>
+          </div>
+        );
+        return (
+          <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:10,minHeight:0}}>
+            <div style={{display:'flex',alignItems:'center',width:'100%',gap:4}}>
+              <BpCol label="收縮壓" hint="（高壓）" value={bpSys} color="#c084fc"
+                onUp={()=>setBpSys(v=>Math.min(200,v+1))}
+                onDn={()=>setBpSys(v=>Math.max(80,v-1))}/>
+              <div style={{fontSize:44,color:'rgba(168,85,247,0.35)',fontWeight:300,lineHeight:1,padding:'0 2px',marginTop:50}}>/</div>
+              <BpCol label="舒張壓" hint="（低壓）" value={bpDia} color="#a78bfa"
+                onUp={()=>setBpDia(v=>Math.min(130,v+1))}
+                onDn={()=>setBpDia(v=>Math.max(40,v-1))}/>
+            </div>
+            <div style={{fontSize:13,color:C.text3}}>mmHg　· 長按可連續調整</div>
+          </div>
+        );
+      })()}
+
+      {/* ── Blood Sugar ── */}
+      {mode==='bs' && (
+        <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:14}}>
+          {/* context — big chips */}
+          <div style={{display:'flex',gap:8,width:'100%'}}>
+            {[['pre','空腹'],['post','餐後 2 小時'],['bed','睡前']].map(([v,l])=>(
+              <button key={v} onClick={()=>setBsCtx(v)} style={{flex:1,padding:'14px 6px',borderRadius:12,background:bsCtx===v?C.amberGlow:C.card2,border:`0.5px solid ${bsCtx===v?C.amberDim:C.border}`,color:bsCtx===v?C.amber:C.text3,fontSize:14,fontWeight:bsCtx===v?700:400,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif',transition:'all .15s'}}>{l}</button>
+            ))}
+          </div>
+          {/* value */}
+          <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:10}}>
+            <AdjBtn label="+" color="#fcd34d" onStart={()=>setBs(v=>Math.round(Math.min(25,v+0.1)*10)/10)}/>
+            <div style={{fontSize:80,fontWeight:700,color:'#fcd34d',lineHeight:1,fontFamily:'Syne,sans-serif'}}>{bs.toFixed(1)}</div>
+            <AdjBtn label="−" color="#fcd34d" onStart={()=>setBs(v=>Math.round(Math.max(2,v-0.1)*10)/10)}/>
+            <div style={{fontSize:13,color:C.text3}}>mmol/L　· 長按可連續調整</div>
+          </div>
+          {/* range bar */}
+          <div style={{width:'100%'}}>
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:12,color:C.text3,marginBottom:5}}>
+              <span>正常範圍</span>
+              <span style={{color:stat.color}}>{bsCtx==='pre'?'空腹 < 6.1':bsCtx==='post'?'餐後 < 7.8':'睡前 < 6.9'}</span>
+            </div>
+            <div style={{height:10,borderRadius:5,background:C.card2,position:'relative',overflow:'hidden'}}>
+              <div style={{position:'absolute',left:0,top:0,bottom:0,width:'58%',background:C.green,borderRadius:5,opacity:.4}}/>
+              <div style={{position:'absolute',top:-1,bottom:-1,width:5,borderRadius:3,background:'#fcd34d',left:`${Math.min(92,Math.max(4,(bs-2)/23*100))}%`,transition:'left .15s'}}/>
+            </div>
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:12,color:C.text3,marginTop:4}}><span>4.0</span><span>7.0</span><span>11.0+</span></div>
+          </div>
+        </div>
+      )}
+
+      {/* confirm button */}
+      <button onClick={handleSave} style={{width:'100%',padding:'20px',borderRadius:20,fontSize:22,fontWeight:900,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif',marginTop:14,flexShrink:0,transition:'all .3s',background:saved?'linear-gradient(135deg,#166534,#14532d)':mode==='bp'?'linear-gradient(135deg,rgba(168,85,247,0.3),rgba(59,130,246,0.15))':'linear-gradient(135deg,rgba(245,158,11,0.25),rgba(239,68,68,0.1))',border:saved?`2px solid ${C.greenDim}`:mode==='bp'?'1.5px solid rgba(168,85,247,0.4)':'1.5px solid rgba(245,158,11,0.4)',color:saved?C.green:mode==='bp'?'#d8b4fe':'#fcd34d'}}>
+        {saved ? '✓ 已記錄，通知家人！' : '確認記錄'}
+      </button>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════
+// ELDER APPOINTMENT VIEW
+// ═══════════════════════════════════
+function ElderAppointmentView({ onBack }) {
+  const next = {day:22,month:4,time:'上午 10:30',weekday:'星期二',dept:'心臟科複診',hospital:'台大醫院',note:'記得空腹，帶健保卡',daysLeft:2};
+  const others = [
+    {day:8,month:5,dept:'年度健檢',hospital:'仁愛醫院',time:'下午 2:00'},
+    {day:20,month:5,dept:'內分泌科',hospital:'台大醫院',time:'上午 9:00'},
+  ];
+  return (
+    <div style={{flex:1,background:'linear-gradient(165deg,#0d1520 0%,#0a0d14 100%)',display:'flex',flexDirection:'column',padding:'18px 18px 36px',overflowY:'auto'}}>
+      <button onClick={onBack} style={{alignSelf:'flex-start',background:'rgba(255,255,255,0.05)',border:`0.5px solid ${C.border}`,borderRadius:10,padding:'7px 12px',color:C.text2,fontSize:13,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif',marginBottom:18}}>← 返回</button>
+      <div style={{fontSize:14,color:'rgba(255,255,255,0.4)',marginBottom:4}}>秀蘭阿嬤，</div>
+      <div style={{fontSize:22,fontWeight:900,color:'#fff',lineHeight:1.2,marginBottom:18}}>下次回診<br/>快到了</div>
+
+      {/* main card */}
+      <div style={{background:'rgba(59,130,246,0.1)',border:'0.5px solid rgba(59,130,246,0.3)',borderRadius:18,padding:18,marginBottom:16}}>
+        <div style={{fontSize:11,color:'rgba(59,130,246,0.6)',letterSpacing:1,marginBottom:8}}>最近回診</div>
+        <div style={{fontSize:40,fontWeight:900,color:'#fff',lineHeight:1}}>{next.month}月{next.day}日</div>
+        <div style={{fontSize:15,color:'rgba(255,255,255,0.5)',marginTop:4}}>{next.weekday}　{next.time}</div>
+        <div style={{fontSize:22,fontWeight:700,color:'#93c5fd',marginTop:10}}>{next.dept}</div>
+        <div style={{fontSize:14,color:'rgba(255,255,255,0.4)',marginTop:3}}>{next.hospital}・{next.note}</div>
+        <div style={{display:'flex',alignItems:'center',gap:6,marginTop:12}}>
+          <span style={{fontSize:28,fontWeight:900,color:C.amber}}>{next.daysLeft}</span>
+          <span style={{fontSize:15,color:'rgba(255,255,255,0.4)'}}>天後</span>
+        </div>
+      </div>
+
+      {/* other list */}
+      <div style={{fontSize:11,color:'rgba(255,255,255,0.25)',letterSpacing:1,marginBottom:10}}>其他行程</div>
+      <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:16}}>
+        {others.map((a,i)=>(
+          <div key={i} style={{background:'rgba(255,255,255,0.04)',border:'0.5px solid rgba(255,255,255,0.08)',borderRadius:12,padding:12,display:'flex',gap:10,alignItems:'center'}}>
+            <div style={{background:'rgba(59,130,246,0.12)',border:'0.5px solid rgba(59,130,246,0.22)',borderRadius:8,padding:'6px 8px',textAlign:'center',minWidth:42}}>
+              <div style={{fontSize:18,fontWeight:900,color:'#93c5fd',lineHeight:1}}>{a.day}</div>
+              <div style={{fontSize:10,color:'rgba(59,130,246,0.5)'}}>{a.month}月</div>
+            </div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:16,fontWeight:700,color:'#fff'}}>{a.dept}</div>
+              <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginTop:2}}>{a.hospital}・{a.time}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div style={{background:'rgba(34,197,94,0.07)',border:'0.5px solid rgba(34,197,94,0.2)',borderRadius:12,padding:'13px 14px',fontSize:14,color:'rgba(255,255,255,0.45)',lineHeight:1.7}}>
+        志明 會提前提醒您<br/>不用擔心忘記 😊
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════
+// MODE SELECTOR + ROOT
+// ═══════════════════════════════════
+function ModeSelector({ onSelect }) {
+  return (
+    <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:16,padding:32}}>
+      <div style={{fontFamily:'Syne,sans-serif',fontSize:24,fontWeight:700,color:C.amber,marginBottom:8}}>CareLink</div>
+      <div style={{fontSize:13,color:C.text2,marginBottom:16}}>選擇要預覽的介面</div>
+      {[{id:'caregiver',icon:'👨‍💻',title:'子女端',sub:'儀表板、通知、藥物管理'},{id:'elder',icon:'👵',title:'長輩端',sub:'我很好、SOS、服藥提醒'}].map(m=>(
+        <button key={m.id} onClick={()=>onSelect(m.id)} style={{width:'100%',padding:'18px 20px',borderRadius:16,background:C.card,border:`0.5px solid ${C.border2}`,display:'flex',alignItems:'center',gap:14,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif',textAlign:'left',transition:'border-color .2s'}}>
+          <span style={{fontSize:28}}>{m.icon}</span>
+          <div>
+            <div style={{fontSize:16,fontWeight:700,color:C.text}}>{m.title}</div>
+            <div style={{fontSize:12,color:C.text2,marginTop:3}}>{m.sub}</div>
+          </div>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════
+// TWEAKS PANEL
+// ═══════════════════════════════════
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "accentColor": "#14b8a6",
+  "showHealthPanel": true,
+  "elderName": "張秀蘭",
+  "reportStatus": "warning"
+}/*EDITMODE-END*/;
+
+function TweaksPanel({ tweaks, setTweaks, visible }) {
+  if (!visible) return null;
+  const set = (k,v) => {
+    const next = {...tweaks,[k]:v};
+    setTweaks(next);
+    window.parent.postMessage({type:'__edit_mode_set_keys',edits:{[k]:v}},'*');
+  };
+  return (
+    <div style={{position:'fixed',bottom:20,right:20,width:240,background:'#1a2133',border:`0.5px solid rgba(255,255,255,0.15)`,borderRadius:16,padding:16,zIndex:999,boxShadow:'0 8px 32px rgba(0,0,0,0.5)',fontFamily:'Noto Sans TC,sans-serif'}}>
+      <div style={{fontSize:12,fontWeight:700,color:C.text3,letterSpacing:1.5,textTransform:'uppercase',marginBottom:12}}>Tweaks</div>
+      <div style={{display:'flex',flexDirection:'column',gap:12}}>
+        <div>
+          <div style={{fontSize:11,color:C.text2,marginBottom:6}}>強調色</div>
+          <div style={{display:'flex',gap:8}}>
+            {[['#14b8a6','Teal'],['#f59e0b','Amber'],['#3b82f6','Blue'],['#22c55e','Green']].map(([c,n])=>(
+              <button key={c} onClick={()=>set('accentColor',c)} title={n} style={{width:28,height:28,borderRadius:'50%',background:c,border:tweaks.accentColor===c?'2px solid #fff':'2px solid transparent',cursor:'pointer'}}/>
+            ))}
+          </div>
+        </div>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+          <span style={{fontSize:12,color:C.text2}}>顯示健康數值</span>
+          <button onClick={()=>set('showHealthPanel',!tweaks.showHealthPanel)} style={{width:36,height:20,borderRadius:10,background:tweaks.showHealthPanel?C.teal:'rgba(255,255,255,0.1)',border:'none',cursor:'pointer',position:'relative',transition:'background .2s'}}>
+            <div style={{width:16,height:16,borderRadius:'50%',background:'#fff',position:'absolute',top:2,left:tweaks.showHealthPanel?18:2,transition:'left .2s'}}/>
+          </button>
+        </div>
+        <div>
+          <div style={{fontSize:11,color:C.text2,marginBottom:8}}>長輩回報狀態</div>
+          <div style={{display:'flex',flexDirection:'column',gap:5}}>
+            {[
+              {v:'ok',      label:'✅ 已回報（正常）',  color:C.green},
+              {v:'warning', label:'⚠️ 尚未回報（警告）', color:C.amber},
+              {v:'critical',label:'🚨 超過 24 小時（危急）', color:C.red},
+            ].map(opt=>(
+              <button key={opt.v} onClick={()=>set('reportStatus',opt.v)} style={{padding:'7px 10px',borderRadius:8,background:tweaks.reportStatus===opt.v?`${opt.color}18`:'rgba(255,255,255,0.03)',border:`0.5px solid ${tweaks.reportStatus===opt.v?opt.color:'rgba(255,255,255,0.08)'}`,color:tweaks.reportStatus===opt.v?opt.color:C.text3,fontSize:11,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif',textAlign:'left',transition:'all .15s'}}>
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <div style={{fontSize:11,color:C.text2,marginBottom:6}}>長輩姓名</div>
+          <input value={tweaks.elderName} onChange={e=>set('elderName',e.target.value)} style={{width:'100%',padding:'7px 10px',borderRadius:8,background:'rgba(255,255,255,0.05)',border:`0.5px solid rgba(255,255,255,0.12)`,color:C.text,fontSize:13,fontFamily:'Noto Sans TC,sans-serif',outline:'none'}}/>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Root App ───
+function App() {
+  const [mode, setMode] = useState(()=>localStorage.getItem('cl_mode')||'selector');
+  const [tweakVisible, setTweakVisible] = useState(false);
+  const [tweaks, setTweaks] = useState(TWEAK_DEFAULTS);
+
+  useEffect(()=>localStorage.setItem('cl_mode',mode),[mode]);
+
+  // tweaks communication
+  useEffect(()=>{
+    const handler = e => {
+      if(e.data?.type==='__activate_edit_mode') setTweakVisible(true);
+      if(e.data?.type==='__deactivate_edit_mode') setTweakVisible(false);
+    };
+    window.addEventListener('message',handler);
+    window.parent.postMessage({type:'__edit_mode_available'},'*');
+    return ()=>window.removeEventListener('message',handler);
+  },[]);
+
+  const topBar = (
+    <div style={{width:'100%',maxWidth:700,display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 20px 10px',flexShrink:0}}>
+      <div style={{fontFamily:'Syne,sans-serif',fontSize:16,fontWeight:700,color:C.amber}}>
+        Care<span style={{color:C.text3,fontWeight:500}}>Link</span>
+        <span style={{fontSize:11,color:C.text3,marginLeft:8,fontFamily:'Noto Sans TC,sans-serif',fontWeight:400}}>互動原型</span>
+      </div>
+      <div style={{display:'flex',gap:8}}>
+        {mode!=='selector'&&(
+          <>
+            <button onClick={()=>setMode(mode==='caregiver'?'elder':'caregiver')} style={{padding:'5px 12px',borderRadius:8,background:C.card,border:`0.5px solid ${C.border2}`,fontSize:11,color:C.text2,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif'}}>
+              {mode==='caregiver'?'👵 長輩端':'👨‍💻 子女端'}
+            </button>
+            <button onClick={()=>setMode('selector')} style={{padding:'5px 12px',borderRadius:8,background:C.card,border:`0.5px solid ${C.border}`,fontSize:11,color:C.text3,cursor:'pointer',fontFamily:'Noto Sans TC,sans-serif'}}>切換</button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{width:'100%',height:'100%',display:'flex',flexDirection:'column',alignItems:'center',overflow:'hidden'}}>
+      {topBar}
+      <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',width:'100%',overflow:'hidden',padding:'0 16px 16px',minHeight:0}}>
+        <PhoneShell>
+          {mode==='selector' && <ModeSelector onSelect={setMode}/>}
+          {mode==='caregiver' && <CaregiverApp onSwitchMode={()=>setMode('elder')} tweaks={tweaks}/>}
+          {mode==='elder' && <ElderApp onSwitchMode={()=>setMode('caregiver')}/>}
+        </PhoneShell>
+      </div>
+      <TweaksPanel tweaks={tweaks} setTweaks={setTweaks} visible={tweakVisible}/>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
