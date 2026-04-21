@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, ScrollView, TextInput, Modal } from 'react-native';
 import { C } from '../theme/tokens';
+import DateField from '../components/DateField';
+import TimeField from '../components/TimeField';
 
 export default function AppointmentsScreen() {
   const todayD = new Date();
@@ -203,12 +205,12 @@ export default function AppointmentsScreen() {
 
               <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 11, color: C.text3, marginBottom: 5 }}>日期 (YYYY-MM-DD)</Text>
-                  <TextInput value={newDate} onChangeText={setNewDate} placeholder="2026-05-01" placeholderTextColor={C.text3} style={input} />
+                  <Text style={{ fontSize: 11, color: C.text3, marginBottom: 5 }}>日期</Text>
+                  <DateField value={newDate} onChange={setNewDate} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 11, color: C.text3, marginBottom: 5 }}>時間</Text>
-                  <TextInput value={newTime} onChangeText={setNewTime} placeholder="10:00" placeholderTextColor={C.text3} style={input} />
+                  <TimeField value={newTime} onChange={setNewTime} />
                 </View>
               </View>
 

@@ -1,21 +1,44 @@
-import React, { useState } from 'react';
-import { View, Text, Pressable, ScrollView } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, Pressable, ScrollView, Animated, Easing } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { C } from '../theme/tokens';
 import { CameraIcon } from '../components/Icons';
 import Spin from '../components/Spin';
+import RadialGlow from '../components/RadialGlow';
+
+function ScanLine({ color = C.green, width = 220 }) {
+  const anim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(anim, { toValue: 1, duration: 1000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(anim, { toValue: 0, duration: 1000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [anim]);
+  const translateY = anim.interpolate({ inputRange: [0, 1], outputRange: [0, 200] });
+  return (
+    <Animated.View pointerEvents="none" style={{ position: 'absolute', left: '50%', marginLeft: -width / 2, top: '30%', width, height: 2, backgroundColor: color, opacity: 0.8, transform: [{ translateY }] }} />
+  );
+}
 
 export default function ElderMedication({ onBack }) {
   const [phase, setPhase] = useState('ready'); // ready | camera | processing | done
+  const [shutterFlash, setShutterFlash] = useState(false);
 
   const handleShutter = () => {
-    setTimeout(() => setPhase('processing'), 200);
+    setShutterFlash(true);
+    setTimeout(() => setShutterFlash(false), 180);
+    setTimeout(() => setPhase('processing'), 300);
     setTimeout(() => setPhase('done'), 2200);
   };
 
   if (phase === 'done') {
     return (
-      <LinearGradient colors={['#051a0d', '#0a1a10']} style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28, gap: 16 }}>
+      <LinearGradient colors={['#051a0d', '#0a1a10']} style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28, gap: 16, overflow: 'hidden' }}>
+        <RadialGlow color="rgba(34,197,94,0.18)" size={320} style={{ top: '50%', left: '50%', marginTop: -160, marginLeft: -160 }} />
         <View style={{ width: 140, height: 140, borderRadius: 20, backgroundColor: '#0a1a0a', borderWidth: 2, borderColor: C.greenDim, alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ fontSize: 44 }}>💊</Text>
           <View style={{ position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(34,197,94,0.9)', borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 }}>
@@ -34,7 +57,12 @@ export default function ElderMedication({ onBack }) {
   if (phase === 'camera') {
     return (
       <View style={{ flex: 1, backgroundColor: '#000' }}>
+        {/* Shutter flash */}
+        {shutterFlash && <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#fff', opacity: 0.85, zIndex: 50 }} />}
+
         <View style={{ flex: 1, backgroundColor: '#050a05', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+          {/* Horizontal scan line animation */}
+          <ScanLine />
           {/* viewfinder corners */}
           <View style={{ width: 220, height: 220, position: 'relative' }}>
             {[
@@ -77,7 +105,8 @@ export default function ElderMedication({ onBack }) {
 
   if (phase === 'processing') {
     return (
-      <View style={{ flex: 1, backgroundColor: '#050a05', alignItems: 'center', justifyContent: 'center', padding: 32, gap: 20 }}>
+      <View style={{ flex: 1, backgroundColor: '#050a05', alignItems: 'center', justifyContent: 'center', padding: 32, gap: 20, overflow: 'hidden' }}>
+        <RadialGlow color="rgba(34,197,94,0.12)" size={360} style={{ top: '50%', left: '50%', marginTop: -180, marginLeft: -180 }} />
         <Spin>
           <View style={{ width: 72, height: 72, borderRadius: 36, borderWidth: 3, borderColor: 'rgba(34,197,94,0.2)', borderTopColor: C.green }} />
         </Spin>

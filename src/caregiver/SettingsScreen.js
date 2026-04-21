@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, ScrollView, TextInput } from 'react-native';
+import { View, Text, Pressable, ScrollView, TextInput, Platform } from 'react-native';
+import Slider from '@react-native-community/slider';
 import { C } from '../theme/tokens';
 import Toggle from '../components/Toggle';
 import { ChevRightIcon, XIcon, PlusIcon } from '../components/Icons';
+import TimeField from '../components/TimeField';
+import FadeIn from '../components/FadeIn';
 
 function SettingSubPage({ title, onBack, children }) {
   return (
-    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: C.bg, zIndex: 150 }}>
+    <FadeIn style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: C.bg, zIndex: 150 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 0.5, borderBottomColor: C.border }}>
         <Pressable onPress={onBack} style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: C.card, borderWidth: 0.5, borderColor: C.border, alignItems: 'center', justifyContent: 'center' }}>
           <XIcon color={C.text2} />
@@ -14,7 +17,7 @@ function SettingSubPage({ title, onBack, children }) {
         <Text style={{ fontSize: 15, fontWeight: '700', color: C.text }}>{title}</Text>
       </View>
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>{children}</ScrollView>
-    </View>
+    </FadeIn>
   );
 }
 
@@ -91,13 +94,23 @@ function SubNotifSettings({ onBack }) {
         </View>
 
         <View style={{ marginTop: 14, backgroundColor: C.card, borderWidth: 0.5, borderColor: C.border, borderRadius: 14, padding: 13 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: settings.quietHourOn ? 10 : 0 }}>
             <View>
               <Text style={{ fontSize: 13, fontWeight: '500', color: C.text }}>🌙 勿擾時段</Text>
               <Text style={{ fontSize: 11, color: C.text2, marginTop: 1 }}>此時段內僅 SOS 會通知</Text>
             </View>
             <Toggle on={settings.quietHourOn} onChange={() => toggle('quietHourOn')} />
           </View>
+          {settings.quietHourOn && (
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <View style={{ flex: 1 }}>
+                <TimeField label="開始" value={settings.quietStart || '22:00'} onChange={(v) => setSettings((s) => ({ ...s, quietStart: v }))} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <TimeField label="結束" value={settings.quietEnd || '07:00'} onChange={(v) => setSettings((s) => ({ ...s, quietEnd: v }))} />
+              </View>
+            </View>
+          )}
         </View>
       </View>
     </SettingSubPage>
@@ -190,6 +203,7 @@ function SubContacts({ onBack }) {
 function SubLocation({ onBack }) {
   const [locationOn, setLocationOn] = useState(true);
   const [geofence, setGeofence] = useState(true);
+  const [radius, setRadius] = useState(1);
   const [shareWith, setShareWith] = useState(['大哥 志明', '二姊 美玲']);
 
   return (
@@ -213,6 +227,26 @@ function SubLocation({ onBack }) {
             <Toggle on={geofence} onChange={setGeofence} />
           </View>
         </View>
+
+        {locationOn && geofence && (
+          <View style={{ backgroundColor: C.card, borderWidth: 0.5, borderColor: C.border, borderRadius: 14, padding: 13 }}>
+            <Text style={{ fontSize: 12, color: C.text2, marginBottom: 10 }}>警示範圍（以家為中心）</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <Slider
+                style={{ flex: 1, height: 36 }}
+                minimumValue={0.5}
+                maximumValue={5}
+                step={0.5}
+                value={radius}
+                onValueChange={setRadius}
+                minimumTrackTintColor={C.teal}
+                maximumTrackTintColor="rgba(255,255,255,0.12)"
+                thumbTintColor={C.teal}
+              />
+              <Text style={{ fontSize: 15, fontWeight: '600', color: C.teal, minWidth: 50, textAlign: 'right', fontFamily: 'Syne_500Medium' }}>{radius} km</Text>
+            </View>
+          </View>
+        )}
 
         <View style={{ backgroundColor: C.card, borderWidth: 0.5, borderColor: C.border, borderRadius: 14, padding: 13 }}>
           <Text style={{ fontSize: 12, color: C.text2, marginBottom: 10 }}>共享對象</Text>

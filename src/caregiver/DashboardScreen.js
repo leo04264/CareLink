@@ -3,6 +3,7 @@ import { View, Text, Pressable, ScrollView } from 'react-native';
 import { C } from '../theme/tokens';
 import { BellIcon, PhoneIcon, MapIcon, CheckIcon, XIcon } from '../components/Icons';
 import Pulse from '../components/Pulse';
+import RadialGlow from '../components/RadialGlow';
 
 export default function DashboardScreen({ onSOS, onCall, onMap, goTo, reportStatus = 'warning' }) {
   const [meds, setMeds] = useState([
@@ -87,7 +88,7 @@ export default function DashboardScreen({ onSOS, onCall, onMap, goTo, reportStat
 
         {/* Header */}
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 14, paddingBottom: 10 }}>
-          <Text style={{ fontSize: 22, fontWeight: '700', color: C.amber, letterSpacing: 0.5 }}>
+          <Text style={{ fontSize: 22, fontWeight: '700', color: C.amber, letterSpacing: 0.5, fontFamily: 'Syne_700Bold' }}>
             Care<Text style={{ color: C.text, fontWeight: '500' }}>Link</Text>
           </Text>
           <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
@@ -131,7 +132,13 @@ export default function DashboardScreen({ onSOS, onCall, onMap, goTo, reportStat
 
         <View style={{ paddingHorizontal: 16, gap: 14 }}>
           {/* Elder status card */}
-          <View style={{ backgroundColor: C.card, borderWidth: 0.5, borderColor: elderCardBorder, borderRadius: 16, padding: 16 }}>
+          <View style={{ backgroundColor: C.card, borderWidth: 0.5, borderColor: elderCardBorder, borderRadius: 16, padding: 16, overflow: 'hidden', position: 'relative' }}>
+            {/* top-right glow circle */}
+            <RadialGlow
+              size={160}
+              color={reportStatus === 'critical' ? 'rgba(239,68,68,0.18)' : reportStatus === 'warning' ? 'rgba(245,158,11,0.18)' : 'rgba(20,184,166,0.18)'}
+              style={{ top: -50, right: -50 }}
+            />
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 }}>
               <View style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: elderAvatarBg, borderWidth: 1.5, borderColor: statusBadge.border, alignItems: 'center', justifyContent: 'center' }}>
                 <Text style={{ fontSize: 22 }}>{elderFace}</Text>
@@ -261,6 +268,22 @@ export default function DashboardScreen({ onSOS, onCall, onMap, goTo, reportStat
       {showNotifPop && (
         <>
           <Pressable onPress={() => setShowNotifPop(false)} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 60 }} />
+          {/* arrow pointing at the bell */}
+          <View
+            style={{
+              position: 'absolute',
+              top: 56,
+              right: 28,
+              width: 12,
+              height: 12,
+              backgroundColor: 'rgba(16,22,34,0.98)',
+              borderLeftWidth: 0.5,
+              borderTopWidth: 0.5,
+              borderColor: C.border2,
+              transform: [{ rotate: '45deg' }],
+              zIndex: 71,
+            }}
+          />
           <View
             style={{
               position: 'absolute',

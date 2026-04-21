@@ -85,9 +85,9 @@ export default function HealthVitalsScreen() {
               </View>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 4, marginBottom: 4 }}>
-              <Text style={{ fontSize: 32, fontWeight: '700', color: C.purpleLight }}>120</Text>
+              <Text style={{ fontSize: 32, fontWeight: '700', color: C.purpleLight, fontFamily: 'Syne_700Bold' }}>120</Text>
               <Text style={{ fontSize: 18, color: C.text3, marginBottom: 4 }}>/</Text>
-              <Text style={{ fontSize: 24, fontWeight: '500', color: 'rgba(168,85,247,0.65)' }}>80</Text>
+              <Text style={{ fontSize: 24, fontWeight: '500', color: 'rgba(168,85,247,0.65)', fontFamily: 'Syne_500Medium' }}>80</Text>
               <Text style={{ fontSize: 11, color: C.text3, marginLeft: 4, marginBottom: 4 }}>mmHg</Text>
             </View>
             <Text style={{ fontSize: 11, color: C.text3, marginBottom: 8 }}>今天 09:15 量測</Text>
@@ -130,7 +130,7 @@ export default function HealthVitalsScreen() {
               </View>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 4, marginBottom: 4 }}>
-              <Text style={{ fontSize: 32, fontWeight: '700', color: '#fcd34d' }}>7.8</Text>
+              <Text style={{ fontSize: 32, fontWeight: '700', color: '#fcd34d', fontFamily: 'Syne_700Bold' }}>7.8</Text>
               <Text style={{ fontSize: 14, color: C.text3, marginLeft: 4, marginBottom: 3 }}>mmol/L</Text>
             </View>
             <Text style={{ fontSize: 11, color: C.text3, marginBottom: 8 }}>今天 09:20 · 餐後</Text>

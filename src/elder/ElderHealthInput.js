@@ -112,7 +112,7 @@ export default function ElderHealthInput({ onBack }) {
             </View>
             <View style={{ alignItems: 'center', gap: 10 }}>
               <AdjBtn label="+" color="#fcd34d" onStart={() => startHold(() => setBs((v) => Math.round(Math.min(25, v + 0.1) * 10) / 10))} onStop={stopHold} />
-              <Text style={{ fontSize: 80, fontWeight: '700', color: '#fcd34d' }}>{bs.toFixed(1)}</Text>
+              <Text style={{ fontSize: 80, fontWeight: '700', color: '#fcd34d', fontFamily: 'Syne_700Bold' }}>{bs.toFixed(1)}</Text>
               <AdjBtn label="−" color="#fcd34d" onStart={() => startHold(() => setBs((v) => Math.round(Math.max(2, v - 0.1) * 10) / 10))} onStop={stopHold} />
               <Text style={{ fontSize: 13, color: C.text3 }}>mmol/L　· 長按可連續調整</Text>
             </View>
@@ -165,7 +165,7 @@ function BpCol({ label, hint, value, color, onUp, onDn, startHold, stopHold }) {
         <Text style={{ fontSize: 11, color: C.text3, marginTop: 1 }}>{hint}</Text>
       </View>
       <AdjBtn label="+" color={color} size={58} onStart={() => startHold(onUp)} onStop={stopHold} />
-      <Text style={{ fontSize: 68, fontWeight: '700', color, minWidth: 96, textAlign: 'center' }}>{value}</Text>
+      <Text style={{ fontSize: 68, fontWeight: '700', color, minWidth: 96, textAlign: 'center', fontFamily: 'Syne_700Bold' }}>{value}</Text>
       <AdjBtn label="−" color={color} size={58} onStart={() => startHold(onDn)} onStop={stopHold} />
     </View>
   );
