@@ -23,6 +23,9 @@
     "splash": {
       "backgroundColor": "#05070a",
       "resizeMode": "contain"
+    },
+    "experiments": {
+      "baseUrl": "/CareLink"
     }
   }
 }
