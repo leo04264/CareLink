@@ -44,3 +44,10 @@ export const FONT = {
   num: 'Syne_500Medium',
   numBold: 'Syne_700Bold',
 };
+
+// Apply to numeric / display text (Syne) — prototype uses this for
+// 血壓、時鐘、品牌字、大數字. Falls back to system if not loaded.
+export const numericFont = (weight = 'normal') => ({
+  fontFamily: weight === 'bold' ? FONT.numBold : FONT.num,
+});
+

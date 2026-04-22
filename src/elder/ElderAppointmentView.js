@@ -21,7 +21,7 @@ export default function ElderAppointmentView({ onBack }) {
 
         <View style={{ backgroundColor: 'rgba(59,130,246,0.1)', borderWidth: 0.5, borderColor: 'rgba(59,130,246,0.3)', borderRadius: 18, padding: 18, marginBottom: 16 }}>
           <Text style={{ fontSize: 11, color: 'rgba(59,130,246,0.6)', letterSpacing: 1, marginBottom: 8 }}>最近回診</Text>
-          <Text style={{ fontSize: 40, fontWeight: '900', color: '#fff' }}>{next.month}月{next.day}日</Text>
+          <Text style={{ fontSize: 40, fontWeight: '900', color: '#fff', fontFamily: 'Syne_700Bold' }}>{next.month}月{next.day}日</Text>
           <Text style={{ fontSize: 15, color: 'rgba(255,255,255,0.5)', marginTop: 4 }}>{next.weekday}　{next.time}</Text>
           <Text style={{ fontSize: 22, fontWeight: '700', color: '#93c5fd', marginTop: 10 }}>{next.dept}</Text>
           <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)', marginTop: 3 }}>{next.hospital}・{next.note}</Text>

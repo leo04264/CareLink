@@ -4,6 +4,7 @@ import { C } from '../theme/tokens';
 import { PlusIcon } from '../components/Icons';
 import Toggle from '../components/Toggle';
 import Pulse from '../components/Pulse';
+import Chevron from '../components/Chevron';
 
 export default function MedicationsScreen() {
   const today = new Date();
@@ -156,7 +157,7 @@ export default function MedicationsScreen() {
                       </Text>
                     </View>
                   </View>
-                  <Text style={{ color: C.text3, transform: [{ rotate: isOpen ? '180deg' : '0deg' }] }}>▾</Text>
+                  <Chevron open={isOpen} size={14} color={C.text3} />
                 </Pressable>
 
                 {isOpen && (

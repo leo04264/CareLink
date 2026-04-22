@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { C } from '../theme/tokens';
+import { recordVital } from '../services/mocks';
 
 function AdjBtn({ label, color, onStart, onStop, size = 76 }) {
   return (
@@ -56,6 +57,12 @@ export default function ElderHealthInput({ onBack }) {
   useEffect(() => () => stopHold(), []);
 
   const handleSave = () => {
+    // MOCK: POST /api/vitals (MOCKS.md #5)
+    recordVital(
+      mode === 'bp'
+        ? { type: 'bp', sys: bpSys, dia: bpDia, source: 'elder_manual' }
+        : { type: 'bs', bs, ctx: bsCtx, source: 'elder_manual' }
+    );
     setSaved(true);
     setTimeout(onBack, 1400);
   };
@@ -112,7 +119,7 @@ export default function ElderHealthInput({ onBack }) {
             </View>
             <View style={{ alignItems: 'center', gap: 10 }}>
               <AdjBtn label="+" color="#fcd34d" onStart={() => startHold(() => setBs((v) => Math.round(Math.min(25, v + 0.1) * 10) / 10))} onStop={stopHold} />
-              <Text style={{ fontSize: 80, fontWeight: '700', color: '#fcd34d' }}>{bs.toFixed(1)}</Text>
+              <Text style={{ fontSize: 80, fontWeight: '700', color: '#fcd34d', fontFamily: 'Syne_700Bold' }}>{bs.toFixed(1)}</Text>
               <AdjBtn label="−" color="#fcd34d" onStart={() => startHold(() => setBs((v) => Math.round(Math.max(2, v - 0.1) * 10) / 10))} onStop={stopHold} />
               <Text style={{ fontSize: 13, color: C.text3 }}>mmol/L　· 長按可連續調整</Text>
             </View>
@@ -165,7 +172,7 @@ function BpCol({ label, hint, value, color, onUp, onDn, startHold, stopHold }) {
         <Text style={{ fontSize: 11, color: C.text3, marginTop: 1 }}>{hint}</Text>
       </View>
       <AdjBtn label="+" color={color} size={58} onStart={() => startHold(onUp)} onStop={stopHold} />
-      <Text style={{ fontSize: 68, fontWeight: '700', color, minWidth: 96, textAlign: 'center' }}>{value}</Text>
+      <Text style={{ fontSize: 68, fontWeight: '700', color, minWidth: 96, textAlign: 'center', fontFamily: 'Syne_700Bold' }}>{value}</Text>
       <AdjBtn label="−" color={color} size={58} onStart={() => startHold(onDn)} onStop={stopHold} />
     </View>
   );

@@ -3,6 +3,8 @@ import { View, Text, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { C } from '../../theme/tokens';
 import Pulse from '../../components/Pulse';
+import RippleRings from '../../components/RippleRings';
+import { dial } from '../../services/mocks';
 
 export default function PhoneCallOverlay({ name, number, onClose }) {
   const [phase, setPhase] = useState('ringing');
@@ -10,9 +12,11 @@ export default function PhoneCallOverlay({ name, number, onClose }) {
   const timerRef = useRef(null);
 
   useEffect(() => {
+    // MOCK: would `Linking.openURL('tel:...')` on real device (MOCKS.md #2)
+    dial(number);
     const t = setTimeout(() => setPhase('connected'), 2800);
     return () => clearTimeout(t);
-  }, []);
+  }, [number]);
 
   useEffect(() => {
     if (phase === 'connected') {
@@ -30,6 +34,9 @@ export default function PhoneCallOverlay({ name, number, onClose }) {
   return (
     <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 300 }}>
       <LinearGradient colors={['#0d1a0f', '#0a0d14']} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={{ flex: 1, alignItems: 'center', justifyContent: 'space-between', padding: 24, paddingTop: 56, paddingBottom: 56 }}>
+        {/* Expanding ring halo behind avatar */}
+        <RippleRings color="rgba(34,197,94,0.35)" count={3} size={160} step={60} duration={2400} style={{ top: '28%' }} />
+
         <View style={{ alignItems: 'center', gap: 6, marginTop: 20 }}>
           <View style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: 'rgba(34,197,94,0.12)', borderWidth: 2, borderColor: 'rgba(34,197,94,0.3)', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
             <Text style={{ fontSize: 40 }}>👵</Text>

@@ -3,18 +3,23 @@ import { View, Text, Pressable, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { C } from '../theme/tokens';
 import { ChevRightIcon } from '../components/Icons';
+import RadialGlow from '../components/RadialGlow';
+import { reportOK } from '../services/mocks';
 
 export default function ElderHome({ onSOS, onMed, onConfirm, onHealth, onAppt }) {
   const [confirmed, setConfirmed] = useState(false);
 
   const handleConfirm = () => {
+    // MOCK: POST /api/elders/:id/report (MOCKS.md #4)
+    reportOK();
     setConfirmed(true);
     onConfirm && onConfirm();
   };
 
   if (confirmed) {
     return (
-      <LinearGradient colors={['#051a0d', '#0a1a10']} style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <LinearGradient colors={['#051a0d', '#0a1a10']} style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, overflow: 'hidden' }}>
+        <RadialGlow color="rgba(34,197,94,0.2)" size={320} style={{ top: '50%', left: '50%', marginTop: -160, marginLeft: -160 }} />
         <View style={{ width: 90, height: 90, borderRadius: 45, backgroundColor: 'rgba(34,197,94,0.15)', borderWidth: 2, borderColor: C.greenDim, alignItems: 'center', justifyContent: 'center', marginBottom: 24 }}>
           <Text style={{ fontSize: 40, color: '#fff' }}>✓</Text>
         </View>
@@ -31,7 +36,10 @@ export default function ElderHome({ onSOS, onMed, onConfirm, onHealth, onAppt })
   }
 
   return (
-    <LinearGradient colors={['#0d1520', '#0a1a12']} style={{ flex: 1 }}>
+    <LinearGradient colors={['#0d1520', '#0a1a12']} style={{ flex: 1, overflow: 'hidden' }}>
+      {/* Bottom green glow behind the big button */}
+      <RadialGlow color="rgba(34,197,94,0.12)" size={360} style={{ bottom: 180, left: '50%', marginLeft: -180 }} />
+
       <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingVertical: 20 }}>
         <View style={{ width: '100%', marginBottom: 16 }}>
           <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginBottom: 4 }}>

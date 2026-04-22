@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, ScrollView, TextInput, Modal } from 'react-native';
 import { C } from '../theme/tokens';
+import DateField from '../components/DateField';
+import TimeField from '../components/TimeField';
+import { createAppointment, updateAppointment, deleteAppointment } from '../services/mocks';
 
 export default function AppointmentsScreen() {
   const todayD = new Date();
@@ -31,8 +34,14 @@ export default function AppointmentsScreen() {
   );
 
   const urgColor = (a) => (a.done ? C.green : a.urgency === 'amber' ? C.amber : a.urgency === 'teal' ? C.teal : C.blue);
-  const markDone = (id) => setAppts((a) => a.map((x) => (x.id === id ? { ...x, done: true } : x)));
-  const delAppt = (id) => setAppts((a) => a.filter((x) => x.id !== id));
+  const markDone = (id) => {
+    updateAppointment(id, { done: true }); // MOCK (MOCKS.md #8)
+    setAppts((a) => a.map((x) => (x.id === id ? { ...x, done: true } : x)));
+  };
+  const delAppt = (id) => {
+    deleteAppointment(id); // MOCK (MOCKS.md #8)
+    setAppts((a) => a.filter((x) => x.id !== id));
+  };
   const toggleRem = (r) => setReminders((rs) => (rs.includes(r) ? rs.filter((x) => x !== r) : [...rs, r]));
 
   const saveAppt = () => {
@@ -42,10 +51,9 @@ export default function AppointmentsScreen() {
     const [y, m, d] = parts.map((x) => parseInt(x, 10));
     const target = new Date(y, m - 1, d);
     const diff = Math.ceil((target - new Date()) / (1000 * 60 * 60 * 24));
-    setAppts((p) => [
-      ...p,
-      { id: Date.now(), day: d, month: m, year: y, time: newTime, dept: newDept, hospital: newHosp || '待確認', note: newNote, daysLeft: diff, urgency: diff <= 3 ? 'amber' : diff <= 14 ? 'teal' : 'blue', done: false },
-    ]);
+    const rec = { id: Date.now(), day: d, month: m, year: y, time: newTime, dept: newDept, hospital: newHosp || '待確認', note: newNote, daysLeft: diff, urgency: diff <= 3 ? 'amber' : diff <= 14 ? 'teal' : 'blue', done: false };
+    createAppointment(rec); // MOCK (MOCKS.md #8)
+    setAppts((p) => [...p, rec]);
     setShowDrawer(false);
     setNewDate('');
     setNewHosp('');
@@ -203,12 +211,12 @@ export default function AppointmentsScreen() {
 
               <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 11, color: C.text3, marginBottom: 5 }}>日期 (YYYY-MM-DD)</Text>
-                  <TextInput value={newDate} onChangeText={setNewDate} placeholder="2026-05-01" placeholderTextColor={C.text3} style={input} />
+                  <Text style={{ fontSize: 11, color: C.text3, marginBottom: 5 }}>日期</Text>
+                  <DateField value={newDate} onChange={setNewDate} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 11, color: C.text3, marginBottom: 5 }}>時間</Text>
-                  <TextInput value={newTime} onChangeText={setNewTime} placeholder="10:00" placeholderTextColor={C.text3} style={input} />
+                  <TimeField value={newTime} onChange={setNewTime} />
                 </View>
               </View>
 
