@@ -3,6 +3,7 @@ import { View, Text, Pressable, ScrollView, TextInput, Modal } from 'react-nativ
 import Svg, { Polyline, Line, Circle } from 'react-native-svg';
 import { C } from '../theme/tokens';
 import { PlusIcon } from '../components/Icons';
+import { recordVital } from '../services/mocks';
 
 export default function HealthVitalsScreen() {
   const [records, setRecords] = useState([
@@ -40,6 +41,15 @@ export default function HealthVitalsScreen() {
     const ctx = addMode === 'bs' ? addCtx : '';
     const { c: bpC } = bpStatus(addSys, addDia);
     const { c: bsC } = bsStatus(addBs);
+    // MOCK: would POST /api/vitals (MOCKS.md #5)
+    recordVital({
+      type: addMode,
+      sys: addSys ? +addSys : null,
+      dia: addDia ? +addDia : null,
+      bs: addBs ? +addBs : null,
+      ctx,
+      source: 'caregiver_manual',
+    });
     setRecords((r) => [{ date: timeStr, bp, bs, ctx, bpC, bsC }, ...r]);
     setAddSaved(true);
     setTimeout(() => {

@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { C } from '../../theme/tokens';
 import Pulse from '../../components/Pulse';
 import RippleRings from '../../components/RippleRings';
+import { dial } from '../../services/mocks';
 
 export default function PhoneCallOverlay({ name, number, onClose }) {
   const [phase, setPhase] = useState('ringing');
@@ -11,9 +12,11 @@ export default function PhoneCallOverlay({ name, number, onClose }) {
   const timerRef = useRef(null);
 
   useEffect(() => {
+    // MOCK: would `Linking.openURL('tel:...')` on real device (MOCKS.md #2)
+    dial(number);
     const t = setTimeout(() => setPhase('connected'), 2800);
     return () => clearTimeout(t);
-  }, []);
+  }, [number]);
 
   useEffect(() => {
     if (phase === 'connected') {

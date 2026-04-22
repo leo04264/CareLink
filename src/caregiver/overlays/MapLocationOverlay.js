@@ -1,13 +1,19 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import Svg, { Defs, Pattern, Path, Rect, Line, Text as SvgText } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { C } from '../../theme/tokens';
 import { XIcon } from '../../components/Icons';
 import Pulse from '../../components/Pulse';
+import { fetchElderLocation } from '../../services/mocks';
 
 export default function MapLocationOverlay({ onClose }) {
   const [tracking, setTracking] = useState(true);
+
+  useEffect(() => {
+    // MOCK: would stream expo-location updates (MOCKS.md #10)
+    fetchElderLocation();
+  }, []);
 
   return (
     <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: C.bg, zIndex: 300 }}>

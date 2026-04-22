@@ -6,6 +6,7 @@ import { PlusIcon } from '../../components/Icons';
 import Pulse from '../../components/Pulse';
 import Toggle from '../../components/Toggle';
 import RippleRings from '../../components/RippleRings';
+import { broadcastSOS, call119 } from '../../services/mocks';
 
 export default function SOSOverlay({ onClose }) {
   const [phase, setPhase] = useState('notifying'); // notifying | confirm119 | calling119
@@ -17,6 +18,8 @@ export default function SOSOverlay({ onClose }) {
 
   useEffect(() => {
     if (phase !== 'notifying') return;
+    // MOCK: fires the SOS broadcast (see src/services/mocks.js, MOCKS.md #3)
+    broadcastSOS({ elderName: '媽媽', contacts });
     const active = contacts.filter((c) => c.enabled);
     const timers = active.map((c, i) =>
       setTimeout(() => setContacts((prev) => prev.map((x) => (x.id === c.id ? { ...x, notified: true } : x))), 800 + i * 900)
@@ -83,7 +86,13 @@ export default function SOSOverlay({ onClose }) {
               <Text style={{ fontSize: 14, fontWeight: '700', color: '#fff', marginBottom: 6 }}>🚑 是否同時通報 119？</Text>
               <Text style={{ fontSize: 12, color: C.text2, marginBottom: 14, lineHeight: 20 }}>家人已收到通知。若情況緊急，可進一步通報緊急救援。</Text>
               <View style={{ flexDirection: 'row', gap: 10 }}>
-                <Pressable onPress={() => setPhase('calling119')} style={{ flex: 1, padding: 12, borderRadius: 10, backgroundColor: C.red, alignItems: 'center' }}>
+                <Pressable
+                  onPress={() => {
+                    call119(); // MOCK (see MOCKS.md #1)
+                    setPhase('calling119');
+                  }}
+                  style={{ flex: 1, padding: 12, borderRadius: 10, backgroundColor: C.red, alignItems: 'center' }}
+                >
                   <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700' }}>🚑 立即通報 119</Text>
                 </Pressable>
                 <Pressable onPress={onClose} style={{ flex: 1, padding: 12, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.12)', alignItems: 'center' }}>

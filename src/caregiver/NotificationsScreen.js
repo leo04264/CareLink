@@ -4,6 +4,7 @@ import { C } from '../theme/tokens';
 import { XIcon, ChevRightIcon, ClockIcon } from '../components/Icons';
 import Pulse from '../components/Pulse';
 import FadeIn from '../components/FadeIn';
+import { dismissNotification, markNotificationRead } from '../services/mocks';
 
 function NotifDetail({ notif, onClose }) {
   const typeColor = {
@@ -102,7 +103,13 @@ export default function NotificationsScreen() {
       <ScrollView contentContainerStyle={{ paddingBottom: 96 }}>
         <View style={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 6, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <Text style={{ fontSize: 18, fontWeight: '700', color: C.text }}>通知中心</Text>
-          <Pressable onPress={() => setDismissed(notifs.map((n) => n.id))}>
+          <Pressable
+            onPress={() => {
+              // MOCK: DELETE /api/notifications per id (MOCKS.md #13)
+              notifs.forEach((n) => dismissNotification(n.id));
+              setDismissed(notifs.map((n) => n.id));
+            }}
+          >
             <Text style={{ color: C.amber, fontSize: 12 }}>全部清除</Text>
           </Pressable>
         </View>
@@ -113,7 +120,10 @@ export default function NotificationsScreen() {
             return (
               <Pressable
                 key={n.id}
-                onPress={() => setSelected(n.id)}
+                onPress={() => {
+                  markNotificationRead(n.id); // MOCK (MOCKS.md #13)
+                  setSelected(n.id);
+                }}
                 style={{ backgroundColor: bg, borderWidth: 0.5, borderColor: border, borderRadius: 14, padding: 13, flexDirection: 'row', gap: 12, position: 'relative' }}
               >
                 <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: c, marginTop: 5 }} />
@@ -126,7 +136,13 @@ export default function NotificationsScreen() {
                   </View>
                 </View>
                 <View style={{ alignItems: 'flex-end', gap: 8 }}>
-                  <Pressable onPress={(e) => { e.stopPropagation(); setDismissed((d) => [...d, n.id]); }}>
+                  <Pressable
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      dismissNotification(n.id); // MOCK (MOCKS.md #13)
+                      setDismissed((d) => [...d, n.id]);
+                    }}
+                  >
                     <XIcon color={C.text3} />
                   </Pressable>
                   <ChevRightIcon color={C.text3} />

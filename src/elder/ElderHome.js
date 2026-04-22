@@ -4,11 +4,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { C } from '../theme/tokens';
 import { ChevRightIcon } from '../components/Icons';
 import RadialGlow from '../components/RadialGlow';
+import { reportOK } from '../services/mocks';
 
 export default function ElderHome({ onSOS, onMed, onConfirm, onHealth, onAppt }) {
   const [confirmed, setConfirmed] = useState(false);
 
   const handleConfirm = () => {
+    // MOCK: POST /api/elders/:id/report (MOCKS.md #4)
+    reportOK();
     setConfirmed(true);
     onConfirm && onConfirm();
   };
