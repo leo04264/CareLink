@@ -129,6 +129,16 @@ npm run build:api        # tsc → apps/api/dist
 npm run typecheck        # @carelink/shared + @carelink/api
 ```
 
+### 後端目前的部署狀態
+
+**尚未上雲，只在本機跑。** Mobile 還是全部走 `apps/mobile/src/services/mocks.js`。
+
+要給任何人 demo 之前必須：
+1. 選定部署平台（Render free / Fly paid / Hetzner / Oracle Always Free — 見 [`docs/MOCKS.md`](docs/MOCKS.md)）
+2. 寫 Dockerfile + CI workflow
+3. Mobile 加上 `services/api.ts` 指向雲端後端
+4. 逐條把 `mocks.js` 換成真實 API 呼叫
+
 ---
 
 ## Design Tokens
