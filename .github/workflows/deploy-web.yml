@@ -3,6 +3,12 @@ name: Deploy Expo Web to GitHub Pages
 on:
   push:
     branches: [master]
+    paths:
+      - 'apps/mobile/**'
+      - 'packages/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/deploy-web.yml'
   workflow_dispatch:
 
 permissions:
@@ -27,16 +33,16 @@ jobs:
           node-version: 20
           cache: npm
 
-      - name: Install dependencies
+      - name: Install workspaces
         run: npm ci
 
       - name: Export Expo web
-        run: npx expo export --platform web
+        run: npm run build:mobile:web
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: apps/mobile/dist
 
   deploy:
     needs: build
