@@ -77,10 +77,32 @@ carelink/
 │               ├── ElderMedication.js     ready → camera → processing → done
 │               ├── ElderHealthInput.js    血壓 / 血糖 大 +/− 按鈕
 │               └── ElderAppointmentView.js
+│   │
+│   └── api/                       Fastify + TypeScript 後端（PR B 起）
+│       ├── src/
+│       │   ├── app.ts             Fastify factory (cors + rate-limit + errors)
+│       │   ├── server.ts          Boot entry
+│       │   ├── plugins/
+│       │   │   └── error-handler.ts   ApiException / ZodError → ApiError envelope
+│       │   └── modules/
+│       │       └── health/health.routes.ts   GET /health
+│       ├── .env.example
+│       ├── package.json           @carelink/api
+│       └── tsconfig.json
 │
-│   (apps/api/ 計畫中 — Fastify + TypeScript，PR B/C 會加)
+├── packages/
+│   └── shared/                    @carelink/shared — TS 型別 + 錯誤碼
+│       └── src/
+│           ├── index.ts           re-exports
+│           ├── enums.ts           ReportStatus / VitalType / NotificationType …
+│           ├── models.ts          Elder / Medication / VitalRecord / Appointment
+│           ├── api.ts             ApiSuccess / ApiError / CursorPage
+│           └── errors.ts          ErrorCodes + DefaultHttpStatus (對應 spec §10)
 │
-├── packages/                     (預定) 前後端共用 TS 型別 / 錯誤碼
+├── infra/
+│   ├── docker-compose.dev.yml    Postgres 16 + Redis 7（本地開發）
+│   └── README.md
+│
 ├── spec/
 │   └── carelink-backend-spec.md  後端規格
 ├── docs/
@@ -88,13 +110,23 @@ carelink/
 │   └── RUNNING.md                本地開發指南
 ├── .github/workflows/
 │   ├── deploy-web.yml            push master (apps/mobile/**) → Pages
-│   └── (deploy-api.yml 計畫中)
+│   └── (deploy-api.yml 計畫中 — PR C)
 ├── .claude/agents/               5 個專門 subagent 定義
 ├── CLAUDE.md                     本文件
 ├── README.md                     Handoff 規格
 ├── CareApp Prototype.html        設計原型
-├── package.json                  workspaces root — scripts 轉到 apps/*
+├── tsconfig.base.json            workspace 共用的 TS compilerOptions
+├── package.json                  workspaces root — scripts 轉到 apps/* / packages/*
 └── package-lock.json             整個 monorepo 共用一份 lockfile
+```
+
+### 後端指令
+
+```bash
+npm run infra:up         # docker compose up -d (postgres + redis)
+npm run dev:api          # tsx watch apps/api/src/server.ts
+npm run build:api        # tsc → apps/api/dist
+npm run typecheck        # @carelink/shared + @carelink/api
 ```
 
 ---

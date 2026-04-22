@@ -7,10 +7,15 @@
     "packages/*"
   ],
   "scripts": {
-    "dev:mobile": "npm -w apps/mobile run start",
-    "build:mobile:web": "npm -w apps/mobile run export:web",
-    "mobile:android": "npm -w apps/mobile run android",
-    "mobile:ios": "npm -w apps/mobile run ios",
-    "mobile:web": "npm -w apps/mobile run web"
+    "dev:mobile": "npm -w @carelink/mobile run start",
+    "dev:api": "npm -w @carelink/api run dev",
+    "build:mobile:web": "npm -w @carelink/mobile run export:web",
+    "build:api": "npm -w @carelink/api run build",
+    "typecheck": "npm -w @carelink/shared run typecheck && npm -w @carelink/api run typecheck",
+    "mobile:android": "npm -w @carelink/mobile run android",
+    "mobile:ios": "npm -w @carelink/mobile run ios",
+    "mobile:web": "npm -w @carelink/mobile run web",
+    "infra:up": "docker compose -f infra/docker-compose.dev.yml up -d",
+    "infra:down": "docker compose -f infra/docker-compose.dev.yml down"
   }
 }
