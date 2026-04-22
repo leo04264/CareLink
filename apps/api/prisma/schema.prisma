@@ -1,0 +1,84 @@
+// CareLink — Prisma schema
+// Grows module by module. PR D adds just the models needed by /auth.
+// Family / Elder CRUD lands in a later PR; this file only defines the
+// minimum surface so register -> pair -> verify can flow end-to-end.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum FamilyMemberRole {
+  PRIMARY
+  CAREGIVER
+}
+
+// ── User (子女 / caregiver) ────────────────────────────────────────────────
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  memberships   FamilyMember[]
+  refreshTokens RefreshToken[]
+}
+
+// ── Opaque refresh tokens (rotated on each /auth/refresh) ──────────────────
+model RefreshToken {
+  id        String    @id @default(uuid())
+  token     String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+// ── Family + membership ────────────────────────────────────────────────────
+model Family {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+
+  members FamilyMember[]
+  elders  Elder[]
+}
+
+model FamilyMember {
+  id       String           @id @default(uuid())
+  role     FamilyMemberRole @default(CAREGIVER)
+  joinedAt DateTime         @default(now())
+
+  userId   String
+  familyId String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  family   Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, familyId])
+}
+
+// ── Elder (長輩) — minimum fields for pairing ──────────────────────────────
+// Full CRUD (profile, avatar, status, …) lands with the elder module PR.
+model Elder {
+  id          String   @id @default(uuid())
+  name        String
+  createdAt   DateTime @default(now())
+
+  familyId String
+  family   Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
+
+  // Device pairing
+  pairCode          String?   @unique
+  pairCodeExpiresAt DateTime?
+  deviceToken       String?
+  platform          String?
+}

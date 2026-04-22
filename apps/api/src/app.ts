@@ -1,7 +1,9 @@
 import Fastify, { type FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
+import authPlugin from './plugins/auth';
 import { registerHealthRoutes } from './modules/health/health.routes';
+import { registerAuthRoutes } from './modules/auth/auth.routes';
 import { registerErrorHandler } from './plugins/error-handler';
 
 export interface BuildAppOptions {
@@ -31,7 +33,9 @@ export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInsta
   });
 
   registerErrorHandler(app);
+  await app.register(authPlugin);
   await app.register(registerHealthRoutes);
+  await app.register(registerAuthRoutes);
 
   return app;
 }
