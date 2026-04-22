@@ -1,0 +1,36 @@
+# Local dev dependencies for apps/api — spec §2.
+# Not for production. Production uses Fly Postgres + Upstash Redis (see PR C).
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: carelink-postgres
+    environment:
+      POSTGRES_USER: carelink
+      POSTGRES_PASSWORD: carelink
+      POSTGRES_DB: carelink
+    ports:
+      - '5432:5432'
+    volumes:
+      - carelink-pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U carelink']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: carelink-redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - carelink-redis:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  carelink-pg:
+  carelink-redis:

@@ -1,0 +1,41 @@
+// Matches spec §10. Keep in sync with apps/api error handler.
+export const ErrorCodes = {
+  // Auth
+  AUTH_INVALID_CREDENTIALS: 'AUTH_INVALID_CREDENTIALS',
+  AUTH_TOKEN_EXPIRED: 'AUTH_TOKEN_EXPIRED',
+  AUTH_UNAUTHORIZED: 'AUTH_UNAUTHORIZED',
+  AUTH_PAIR_CODE_INVALID: 'AUTH_PAIR_CODE_INVALID',
+
+  // Resource
+  NOT_FOUND: 'NOT_FOUND',
+  ALREADY_EXISTS: 'ALREADY_EXISTS',
+
+  // Business logic
+  CHECKIN_ALREADY_DONE: 'CHECKIN_ALREADY_DONE',
+  MEDICATION_PAUSED: 'MEDICATION_PAUSED',
+  APPOINTMENT_PAST: 'APPOINTMENT_PAST',
+
+  // Generic
+  VALIDATION_ERROR: 'VALIDATION_ERROR',
+  INTERNAL_ERROR: 'INTERNAL_ERROR',
+  RATE_LIMITED: 'RATE_LIMITED',
+} as const;
+
+export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];
+
+// Default HTTP mapping per spec §10. Error-throwing sites can pass a
+// different status if they need to.
+export const DefaultHttpStatus: Record<ErrorCode, number> = {
+  AUTH_INVALID_CREDENTIALS: 401,
+  AUTH_TOKEN_EXPIRED: 401,
+  AUTH_UNAUTHORIZED: 401,
+  AUTH_PAIR_CODE_INVALID: 401,
+  NOT_FOUND: 404,
+  ALREADY_EXISTS: 409,
+  CHECKIN_ALREADY_DONE: 409,
+  MEDICATION_PAUSED: 400,
+  APPOINTMENT_PAST: 400,
+  VALIDATION_ERROR: 400,
+  INTERNAL_ERROR: 500,
+  RATE_LIMITED: 429,
+};
