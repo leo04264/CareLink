@@ -6,6 +6,27 @@
 
 ---
 
+## ⚠️ Demo 前必須決定：後端部署方案
+
+**目前狀態**：`apps/api/` 只在本機跑 (`npm run dev:api`)。Mobile 還是全部走 mocks，沒有實際打 API。
+
+要給家人或任何人 demo 之前，必須做其中一個：
+
+| 選項 | 月費 | 何時選它 |
+|---|---|---|
+| **Render Free + Neon + Upstash** | $0 | 只想讓人試一下，能接受 15 分鐘閒置睡眠、冷啟 20s、BullMQ 排程會錯過 |
+| **Fly.io**（付費）| ~$5 | 要穩定運作 + 排程準時，不想管 Linux |
+| **Hetzner VPS**（付費）| ~$4 | 同樣 $5 等級但完全自己掌控，要會 Linux |
+| **Oracle Cloud Always Free** | $0 | 想要真的免費 + 排程穩，願意忍受註冊麻煩 |
+
+決定後：
+1. 寫 `apps/api/Dockerfile` + 對應平台設定（`fly.toml` / `render.yaml` / 直接 docker-compose）
+2. 新增 `.github/workflows/deploy-api.yml` 或手動 deploy runbook
+3. 把 `apps/mobile/src/services/api.ts` 的 `API_URL` 指向新後端
+4. 開始把下表的 mock 逐條換成真 API 呼叫
+
+---
+
 ## 圖例
 
 | 分類 | 說明 |
@@ -41,6 +62,13 @@
 ---
 
 ## 上線 checklist（開發前 / 開發中 / 上線前）
+
+### 🚨 Demo 前必做（目前最大的 blocker）
+- [ ] **選定後端部署方案**（見本文件最上方「⚠️ Demo 前必須決定」一段）
+- [ ] 寫 `Dockerfile` + 平台設定（`fly.toml` / `render.yaml` / docker-compose）
+- [ ] 部署 `apps/api` 到雲上，確認 `https://<domain>/health` 能通
+- [ ] 建立 `apps/mobile/src/services/api.ts`，把 `API_URL` 指向雲端後端
+- [ ] 把 `mocks.reportOK()` 換成真打 `POST /api/elders/:id/report`（第一個 end-to-end 測試）
 
 ### 技術選型（開發前決定）
 - [ ] 後端：Firebase / Supabase / 自建 Node + Postgres？

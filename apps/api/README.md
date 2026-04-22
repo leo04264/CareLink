@@ -5,8 +5,8 @@ Fastify + TypeScript backend for CareLink. Full spec: [`spec/carelink-backend-sp
 ## Status
 
 - ✅ PR B — skeleton: `/health` endpoint, CORS, rate-limit, error envelope, shared types
-- ⏳ PR C — Fly.io deploy (Dockerfile + `fly.toml` + `deploy-api.yml`)
-- ⏳ PR D+ — implement modules per spec §5 (auth, elder, checkin, medication, …)
+- ⏸ **Deploy deferred** — runs on `localhost:3000` only for now; mobile still uses mocks. **Must be resolved before demo to anyone outside the dev machine.** See [`docs/MOCKS.md`](../../docs/MOCKS.md#-demo-前必須決定後端部署方案) for options (Render free / Fly paid / Hetzner / Oracle).
+- ⏳ PR D+ — implement modules per spec §5 (auth, elder, checkin, medication, …). These can land while deployment is still unresolved; mobile continues hitting mocks until the API is cloud-hosted.
 
 ## Local dev
 
