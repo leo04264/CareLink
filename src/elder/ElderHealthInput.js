@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { C } from '../theme/tokens';
+import { recordVital } from '../services/mocks';
 
 function AdjBtn({ label, color, onStart, onStop, size = 76 }) {
   return (
@@ -56,6 +57,12 @@ export default function ElderHealthInput({ onBack }) {
   useEffect(() => () => stopHold(), []);
 
   const handleSave = () => {
+    // MOCK: POST /api/vitals (MOCKS.md #5)
+    recordVital(
+      mode === 'bp'
+        ? { type: 'bp', sys: bpSys, dia: bpDia, source: 'elder_manual' }
+        : { type: 'bs', bs, ctx: bsCtx, source: 'elder_manual' }
+    );
     setSaved(true);
     setTimeout(onBack, 1400);
   };

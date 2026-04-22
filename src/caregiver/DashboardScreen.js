@@ -4,6 +4,7 @@ import { C } from '../theme/tokens';
 import { BellIcon, PhoneIcon, MapIcon, CheckIcon, XIcon } from '../components/Icons';
 import Pulse from '../components/Pulse';
 import RadialGlow from '../components/RadialGlow';
+import { confirmMedDose } from '../services/mocks';
 
 export default function DashboardScreen({ onSOS, onCall, onMap, goTo, reportStatus = 'warning' }) {
   const [meds, setMeds] = useState([
@@ -13,7 +14,17 @@ export default function DashboardScreen({ onSOS, onCall, onMap, goTo, reportStat
   ]);
   const [showNotifPop, setShowNotifPop] = useState(false);
 
-  const toggleMed = (id) => setMeds((m) => m.map((x) => (x.id === id ? { ...x, done: !x.done } : x)));
+  const toggleMed = (id) => {
+    setMeds((m) =>
+      m.map((x) => {
+        if (x.id !== id) return x;
+        const next = { ...x, done: !x.done };
+        // MOCK: would write dose log (MOCKS.md #7)
+        if (next.done) confirmMedDose({ medId: x.id, medName: x.name });
+        return next;
+      })
+    );
+  };
 
   const allNotifs = [
     reportStatus === 'critical' && { id: 'c1', type: 'sos', icon: '🚨', title: 'SOS 緊急通報', body: '媽媽觸發了緊急按鈕', time: '3 分鐘前' },

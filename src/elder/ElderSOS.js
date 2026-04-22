@@ -4,6 +4,7 @@ import Svg, { Circle } from 'react-native-svg';
 import { C } from '../theme/tokens';
 import Pulse from '../components/Pulse';
 import RadialGlow from '../components/RadialGlow';
+import { broadcastSOS } from '../services/mocks';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -21,6 +22,14 @@ export default function ElderSOS({ onBack }) {
       setCount((c) => {
         if (c <= 1) {
           clearInterval(countRef.current);
+          // MOCK: broadcast SOS to emergency contacts (MOCKS.md #3)
+          broadcastSOS({
+            elderName: '媽媽',
+            contacts: [
+              { id: 1, name: '大哥 志明', enabled: true },
+              { id: 2, name: '二姊 美玲', enabled: true },
+            ],
+          });
           setPhase('sent');
           return 0;
         }

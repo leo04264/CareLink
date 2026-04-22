@@ -5,6 +5,7 @@ import { C } from '../theme/tokens';
 import { CameraIcon } from '../components/Icons';
 import Spin from '../components/Spin';
 import RadialGlow from '../components/RadialGlow';
+import { confirmMedDose } from '../services/mocks';
 
 function ScanLine({ color = C.green, width = 220 }) {
   const anim = useRef(new Animated.Value(0)).current;
@@ -32,6 +33,8 @@ export default function ElderMedication({ onBack }) {
     setShutterFlash(true);
     setTimeout(() => setShutterFlash(false), 180);
     setTimeout(() => setPhase('processing'), 300);
+    // MOCK: upload photo + AI verification (MOCKS.md #7)
+    confirmMedDose({ medName: '安眠藥', photoUri: 'mock://snapshot.jpg' });
     setTimeout(() => setPhase('done'), 2200);
   };
 
@@ -174,7 +177,14 @@ export default function ElderMedication({ onBack }) {
               <Text style={{ color: '#fff', fontSize: 22, fontWeight: '900' }}>拍照確認服藥</Text>
             </LinearGradient>
           </Pressable>
-          <Pressable onPress={() => setPhase('done')} style={{ padding: 13, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.08)', alignItems: 'center' }}>
+          <Pressable
+            onPress={() => {
+              // MOCK: log dose without photo (MOCKS.md #7)
+              confirmMedDose({ medName: '安眠藥', photoUri: null });
+              setPhase('done');
+            }}
+            style={{ padding: 13, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.08)', alignItems: 'center' }}
+          >
             <Text style={{ color: 'rgba(255,255,255,0.3)', fontSize: 14 }}>略過拍照，直接確認</Text>
           </Pressable>
         </View>
