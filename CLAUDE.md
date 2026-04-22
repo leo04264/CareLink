@@ -35,46 +35,66 @@
 
 ## File Structure
 
+本 repo 採 **npm workspaces monorepo**。
+
 ```
-App.js                          Root — 模式選擇 → CaregiverApp / ElderApp
-index.js                        Entry（含 @expo/metro-runtime for web）
-app.json                        expo.experiments.baseUrl = "/CareLink"
-.github/workflows/deploy.yml    push master → expo export web → Pages
-
-src/
-  theme/tokens.js               設計 token（C.bg, C.teal, FONT, numericFont）
-  context/TweaksContext.js      reportStatus / accentColor / elderName 全域
-
-  components/
-    Icons.js                    自製 SVG icon pack
-    Pulse.js    Spin.js         動畫 primitive
-    Toggle.js   Chevron.js      控制項
-    FadeIn.js   RippleRings.js  過場動畫
-    RadialGlow.js               SVG 徑向光暈
-    TweaksPanel.js              Debug / demo 面板
-    TimeField.js  DateField.js  Native picker + web 文字 fallback
-
-  caregiver/
-    CaregiverApp.js             Shell + tab bar + overlays
-    TabBar.js                   5 tabs: 總覽 / 健康 / 藥物 / 行程 / 設定
-    DashboardScreen.js          狀態卡、鈴鐺 popover、活動、健康快照
-    HealthVitalsScreen.js       血壓 / 血糖 7 天 SVG 圖 + 手動新增
-    MedicationsScreen.js        週曆 + 展開藥物卡 + 漏服 banner + 新增
-    AppointmentsScreen.js       月曆 + 回診卡 + 過去紀錄 + 新增抽屜
-    SettingsScreen.js           + 4 sub-pages (Profile / Notif / Contacts / Location)
-    NotificationsScreen.js      列表 + 詳情 overlay
-    overlays/
-      SOSOverlay.js             聯絡人通知 → 119 確認 → 撥打
-      PhoneCallOverlay.js       Ringing → connected → 計時 → 掛斷
-      MapLocationOverlay.js     假地圖 + 長輩 pin + 資訊卡
-
-  elder/
-    ElderApp.js                 Shell（home → 子畫面 via onBack）
-    ElderHome.js                「我很好」大按鈕 + 快速動作 + SOS
-    ElderSOS.js                 長按 3 秒 + 進度環 + 發送動畫
-    ElderMedication.js          ready → camera → processing → done
-    ElderHealthInput.js         血壓 / 血糖 大 +/− 按鈕，支援長按連打
-    ElderAppointmentView.js     下次回診 + 其他行程
+carelink/
+├── apps/
+│   └── mobile/                    React Native + Expo (前端)
+│       ├── App.js                 Root — 模式選擇 → CaregiverApp / ElderApp
+│       ├── index.js               Entry（含 @expo/metro-runtime for web）
+│       ├── app.json               expo.experiments.baseUrl = "/CareLink"
+│       ├── metro.config.js        Monorepo-aware Metro 設定
+│       └── src/
+│           ├── theme/tokens.js            設計 token（C.bg, C.teal, FONT）
+│           ├── context/TweaksContext.js   reportStatus / accentColor 全域
+│           ├── services/mocks.js          後端 mock (見 docs/MOCKS.md)
+│           ├── components/
+│           │   ├── Icons.js               自製 SVG icon pack
+│           │   ├── Pulse.js Spin.js       動畫 primitive
+│           │   ├── Toggle.js Chevron.js   控制項
+│           │   ├── FadeIn.js RippleRings.js 過場動畫
+│           │   ├── RadialGlow.js          SVG 徑向光暈
+│           │   ├── TweaksPanel.js         Debug / demo 面板
+│           │   └── TimeField.js DateField.js Native picker + web fallback
+│           ├── caregiver/
+│           │   ├── CaregiverApp.js        Shell + tab bar + overlays
+│           │   ├── TabBar.js              5 tabs
+│           │   ├── DashboardScreen.js
+│           │   ├── HealthVitalsScreen.js
+│           │   ├── MedicationsScreen.js
+│           │   ├── AppointmentsScreen.js
+│           │   ├── SettingsScreen.js      + 4 sub-pages
+│           │   ├── NotificationsScreen.js
+│           │   └── overlays/
+│           │       ├── SOSOverlay.js
+│           │       ├── PhoneCallOverlay.js
+│           │       └── MapLocationOverlay.js
+│           └── elder/
+│               ├── ElderApp.js
+│               ├── ElderHome.js           「我很好」大按鈕 + 快速動作 + SOS
+│               ├── ElderSOS.js            長按 3 秒 + 進度環
+│               ├── ElderMedication.js     ready → camera → processing → done
+│               ├── ElderHealthInput.js    血壓 / 血糖 大 +/− 按鈕
+│               └── ElderAppointmentView.js
+│
+│   (apps/api/ 計畫中 — Fastify + TypeScript，PR B/C 會加)
+│
+├── packages/                     (預定) 前後端共用 TS 型別 / 錯誤碼
+├── spec/
+│   └── carelink-backend-spec.md  後端規格
+├── docs/
+│   ├── MOCKS.md                  上線前要換的 mock 清單
+│   └── RUNNING.md                本地開發指南
+├── .github/workflows/
+│   ├── deploy-web.yml            push master (apps/mobile/**) → Pages
+│   └── (deploy-api.yml 計畫中)
+├── .claude/agents/               5 個專門 subagent 定義
+├── CLAUDE.md                     本文件
+├── README.md                     Handoff 規格
+├── CareApp Prototype.html        設計原型
+├── package.json                  workspaces root — scripts 轉到 apps/*
+└── package-lock.json             整個 monorepo 共用一份 lockfile
 ```
 
 ---
@@ -123,21 +143,28 @@ src/
 ### Run locally
 
 ```bash
+# 第一次：在 root 安裝整個 monorepo
 npm install
-npm start                # expo start
-# i / a / w → iOS / Android / Web
+
+# 啟前端
+npm run dev:mobile          # = expo start (inside apps/mobile)
+# 啟動後按 i / a / w → iOS / Android / Web
+
+# 直接跑 web export (debug deploy 用)
+npm run build:mobile:web    # = expo export --platform web
+# 輸出到 apps/mobile/dist/
 ```
 
 ### Deploy
 
-Push to `master` → `.github/workflows/deploy.yml` 會自動：
+Push to `master` 且有動到 `apps/mobile/**` / `packages/**` / root `package*.json` → `.github/workflows/deploy-web.yml` 會自動：
 
-1. `npm ci`
-2. `npx expo export --platform web`
-3. Upload `dist/` → `actions/deploy-pages@v4`
+1. `npm ci` （root）
+2. `npm run build:mobile:web` （= `npm -w apps/mobile run export:web`）
+3. Upload `apps/mobile/dist/` → `actions/deploy-pages@v4`
 4. 部署至 https://leo04264.github.io/CareLink/
 
-**只要改 `app.json` 的 `experiments.baseUrl` 或 repo 改名，web 匯出路徑就會壞，記得同步。**
+**只要改 `apps/mobile/app.json` 的 `experiments.baseUrl` 或 repo 改名，web 匯出路徑就會壞，記得同步。**
 
 ---
 
@@ -192,5 +219,7 @@ User review
 
 - `CareApp Prototype.html` — 設計原型，**改 UI 前先比對這份**
 - `README.md` — 原始 handoff 文件，含設計 spec、state shape、mock data
-- `RUNNING.md` — 本地執行指南
+- `spec/carelink-backend-spec.md` — 後端開發規格（Fastify + Postgres + BullMQ）
+- `docs/RUNNING.md` — 本地執行指南
+- `docs/MOCKS.md` — mock service 清單，上線前逐條替換成真實後端
 - `CLAUDE.md` — 本文件
