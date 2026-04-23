@@ -86,8 +86,9 @@ model Elder {
   deviceToken       String?
   platform          String?
 
-  checkins    Checkin[]
-  medications Medication[]
+  checkins     Checkin[]
+  medications  Medication[]
+  healthVitals HealthVital[]
 }
 
 // ── InviteToken ─────────────────────────────────────────────────────────────
@@ -207,4 +208,29 @@ model MedicationLog {
   medication   Medication @relation(fields: [medicationId], references: [id], onDelete: Cascade)
 
   @@index([medicationId, takenAt])
+}
+
+// ── Health vitals (BP + BS share the table) ─────────────────────────────────
+enum HealthVitalType {
+  BLOOD_PRESSURE
+  BLOOD_SUGAR
+}
+
+model HealthVital {
+  id           String          @id @default(uuid())
+  type         HealthVitalType
+  measuredAt   DateTime        @default(now())
+
+  // BP (type = BLOOD_PRESSURE)
+  systolic  Int?
+  diastolic Int?
+
+  // BS (type = BLOOD_SUGAR)
+  glucoseValue Float?
+  mealContext  String?
+
+  elderId String
+  elder   Elder  @relation(fields: [elderId], references: [id], onDelete: Cascade)
+
+  @@index([elderId, type, measuredAt])
 }

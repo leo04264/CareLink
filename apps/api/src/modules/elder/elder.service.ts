@@ -5,6 +5,7 @@ import { prisma } from '../../lib/prisma';
 import { assertElderAccess, assertMember } from '../../lib/membership';
 import { computeStreak, hasCheckedInToday } from '../checkin/checkin.service';
 import { getMedicationStatusForElder } from '../medication/medication.service';
+import { getVitalsStatusForElder } from '../vitals/vitals.service';
 import type { CreateElderInput, UpdateElderInput, UpdatePushTokenInput } from './elder.schema';
 
 function toSummary(e: {
@@ -76,10 +77,11 @@ export async function updatePushToken(
 export async function getElderStatus(callerId: string, elderId: string): Promise<ElderStatusResponse> {
   await assertElderAccess(callerId, elderId);
 
-  const [today, streak, medStatus] = await Promise.all([
+  const [today, streak, medStatus, vitalsStatus] = await Promise.all([
     hasCheckedInToday(elderId),
     computeStreak(elderId),
     getMedicationStatusForElder(elderId),
+    getVitalsStatusForElder(elderId),
   ]);
 
   return {
@@ -90,7 +92,7 @@ export async function getElderStatus(callerId: string, elderId: string): Promise
     },
     medications: medStatus,
     nextAppointment: null,
-    lastBP: null,
-    lastGlucose: null,
+    lastBP: vitalsStatus.lastBP,
+    lastGlucose: vitalsStatus.lastGlucose,
   };
 }
