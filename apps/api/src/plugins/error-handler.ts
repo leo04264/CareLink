@@ -48,6 +48,17 @@ export function registerErrorHandler(app: FastifyInstance): void {
       return reply.status(400).send(body);
     }
 
+    // Malformed JSON body from the client → 400, not 500.
+    // (Fastify's content-type-parser surfaces the SyntaxError with statusCode 400.)
+    const withStatus = err as { statusCode?: number };
+    if (err instanceof SyntaxError || withStatus.statusCode === 400) {
+      const body: ApiError = {
+        ok: false,
+        error: { code: ErrorCodes.VALIDATION_ERROR, message: err.message },
+      };
+      return reply.status(400).send(body);
+    }
+
     req.log.error({ err }, 'unhandled error');
     const body: ApiError = {
       ok: false,
