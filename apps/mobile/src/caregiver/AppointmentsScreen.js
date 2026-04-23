@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, ScrollView, TextInput, Modal } from 'react-native';
+import { View, Text, Pressable, ScrollView, TextInput, Modal, Alert, Platform } from 'react-native';
 import { C } from '../theme/tokens';
 import DateField from '../components/DateField';
 import TimeField from '../components/TimeField';
@@ -188,7 +188,26 @@ export default function AppointmentsScreen() {
             { d: '3/18', name: '骨科回診', note: 'X 光正常', s: '已完成' },
             { d: '3/5', name: '年度健檢', note: '血糖稍偏高，需追蹤', s: '需追蹤' },
           ].map((r, i) => (
-            <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 9, borderBottomWidth: i < 2 ? 0.5 : 0, borderBottomColor: C.border }}>
+            <Pressable
+              key={i}
+              onPress={() => {
+                const body = `${r.d}・${r.name}\n\n備註：${r.note}\n狀態：${r.s}`;
+                if (Platform.OS === 'web' && typeof window !== 'undefined' && window.alert) {
+                  window.alert(body);
+                } else {
+                  Alert.alert(r.name, body, [{ text: '關閉' }]);
+                }
+              }}
+              style={({ pressed }) => ({
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 10,
+                paddingVertical: 9,
+                borderBottomWidth: i < 2 ? 0.5 : 0,
+                borderBottomColor: C.border,
+                opacity: pressed ? 0.6 : 1,
+              })}
+            >
               <Text style={{ fontSize: 11, color: C.text3, minWidth: 44 }}>{r.d}</Text>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 13, fontWeight: '500', color: C.text }}>{r.name}</Text>
@@ -197,7 +216,7 @@ export default function AppointmentsScreen() {
               <View style={{ backgroundColor: r.s === '需追蹤' ? C.amberGlow : C.greenGlow, borderWidth: 0.5, borderColor: r.s === '需追蹤' ? C.amberDim : C.greenDim, borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3 }}>
                 <Text style={{ fontSize: 11, color: r.s === '需追蹤' ? C.amber : C.green }}>{r.s}</Text>
               </View>
-            </View>
+            </Pressable>
           ))}
         </View>
       </ScrollView>

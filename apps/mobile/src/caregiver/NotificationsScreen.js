@@ -1,12 +1,20 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, ScrollView } from 'react-native';
+import { View, Text, Pressable, ScrollView, Alert, Platform } from 'react-native';
 import { C } from '../theme/tokens';
 import { XIcon, ChevRightIcon, ClockIcon } from '../components/Icons';
 import Pulse from '../components/Pulse';
 import FadeIn from '../components/FadeIn';
 import { dismissNotification, markNotificationRead } from '../services/mocks';
 
-function NotifDetail({ notif, onClose }) {
+function notImplemented(title) {
+  if (Platform.OS === 'web' && typeof window !== 'undefined' && window.alert) {
+    window.alert(`${title}\n\n此功能尚未實作（MOCK）`);
+    return;
+  }
+  Alert.alert(title, '此功能尚未實作（MOCK）', [{ text: '了解' }]);
+}
+
+function NotifDetail({ notif, onClose, onCall, onMap, goTo, onResolve }) {
   const typeColor = {
     sos: [C.red, C.redGlow, C.redDim],
     med: [C.amber, C.amberGlow, C.amberDim],
@@ -15,11 +23,78 @@ function NotifDetail({ notif, onClose }) {
   };
   const [c, bg, bd] = typeColor[notif.type] || [C.text2, C.card, C.border];
 
+  // Per-type action handlers. Each closes the detail after firing; some also
+  // dismiss the source notification (e.g. 標記為已服用 logically resolves it).
   const details = {
-    sos: { icon: '🚨', desc: '媽媽於今天 21:32 觸發了 SOS 緊急按鈕。\n系統已自動通知大哥志明及二姊美玲。\n若情況嚴重請直接撥打 119。', actions: [{ label: '📞 立即撥打', color: C.red }, { label: '查看位置', color: C.text2 }] },
-    med: { icon: '💊', desc: '安眠藥（每天 21:00）今天尚未確認服用。\n\n距離提醒時間已過 30 分鐘。請確認長輩是否已服藥，或協助更新紀錄。', actions: [{ label: '標記為已服用', color: C.green }, { label: '延後提醒 1 小時', color: C.amber }] },
-    ok: { icon: '😊', desc: '媽媽於今天 09:12 按下了「我很好」按鈕，成功完成今日回報。\n\n連續回報天數：14 天 🎉', actions: [{ label: '回覆留言', color: C.teal }] },
-    health: { icon: '📊', desc: '媽媽於昨天 19:05 更新了健康數值。\n\n血壓：126 / 82 mmHg（正常）\n血糖：5.8 mmol/L（正常）\n體溫：36.5°C', actions: [{ label: '查看完整紀錄', color: C.blue }] },
+    sos: {
+      icon: '🚨',
+      desc: '媽媽於今天 21:32 觸發了 SOS 緊急按鈕。\n系統已自動通知大哥志明及二姊美玲。\n若情況嚴重請直接撥打 119。',
+      actions: [
+        {
+          label: '📞 立即撥打',
+          color: C.red,
+          onPress: () => {
+            onClose();
+            onCall && onCall();
+          },
+        },
+        {
+          label: '查看位置',
+          color: C.text2,
+          onPress: () => {
+            onClose();
+            onMap && onMap();
+          },
+        },
+      ],
+    },
+    med: {
+      icon: '💊',
+      desc: '安眠藥（每天 21:00）今天尚未確認服用。\n\n距離提醒時間已過 30 分鐘。請確認長輩是否已服藥，或協助更新紀錄。',
+      actions: [
+        {
+          label: '標記為已服用',
+          color: C.green,
+          onPress: () => {
+            onResolve && onResolve(notif.id);
+            onClose();
+          },
+        },
+        {
+          label: '延後提醒 1 小時',
+          color: C.amber,
+          onPress: () => {
+            onResolve && onResolve(notif.id);
+            onClose();
+          },
+        },
+      ],
+    },
+    ok: {
+      icon: '😊',
+      desc: '媽媽於今天 09:12 按下了「我很好」按鈕，成功完成今日回報。\n\n連續回報天數：14 天 🎉',
+      actions: [
+        {
+          label: '回覆留言',
+          color: C.teal,
+          onPress: () => notImplemented('回覆留言'),
+        },
+      ],
+    },
+    health: {
+      icon: '📊',
+      desc: '媽媽於昨天 19:05 更新了健康數值。\n\n血壓：126 / 82 mmHg（正常）\n血糖：5.8 mmol/L（正常）\n體溫：36.5°C',
+      actions: [
+        {
+          label: '查看完整紀錄',
+          color: C.blue,
+          onPress: () => {
+            onClose();
+            goTo && goTo('health');
+          },
+        },
+      ],
+    },
   };
   const d = details[notif.type] || { icon: '🔔', desc: notif.body, actions: [] };
   const typeLabel = { sos: '緊急', med: '藥物', ok: '回報', health: '健康' }[notif.type] || '通知';
@@ -64,7 +139,11 @@ function NotifDetail({ notif, onClose }) {
         {d.actions.length > 0 && (
           <View style={{ gap: 8 }}>
             {d.actions.map((a, i) => (
-              <Pressable key={i} style={{ padding: 13, borderRadius: 12, backgroundColor: `${a.color}1f`, borderWidth: 0.5, borderColor: `${a.color}55`, alignItems: 'center' }}>
+              <Pressable
+                key={i}
+                onPress={a.onPress}
+                style={{ padding: 13, borderRadius: 12, backgroundColor: `${a.color}1f`, borderWidth: 0.5, borderColor: `${a.color}55`, alignItems: 'center' }}
+              >
                 <Text style={{ color: a.color, fontSize: 14, fontWeight: '600' }}>{a.label}</Text>
               </Pressable>
             ))}
@@ -75,12 +154,12 @@ function NotifDetail({ notif, onClose }) {
   );
 }
 
-export default function NotificationsScreen() {
+export default function NotificationsScreen({ onCall, onMap, goTo }) {
   const [dismissed, setDismissed] = useState([]);
   const [selected, setSelected] = useState(null);
 
   const notifs = [
-    { id: 1, type: 'sos', title: '⚠️ SOS 緊急通報', body: '媽媽觸發了緊急按鈕，請立即聯繫！', time: '3分鐘前', urgent: true },
+    { id: 1, type: 'sos', title: '⚠️ SOS 緊急通報', body: '媽媽觸發了緊急按鈕，請立即聯繫!', time: '3分鐘前', urgent: true },
     { id: 2, type: 'med', title: '💊 藥物未服用提醒', body: '安眠藥（21:00）尚未確認服用。', time: '30分鐘前', urgent: false },
     { id: 3, type: 'ok', title: '✅ 每日回報', body: '媽媽已完成今日「我很好」回報。', time: '今天 09:12', urgent: false },
     { id: 4, type: 'health', title: '📊 健康數值更新', body: '血壓 126/82 — 在正常範圍內。', time: '昨天 19:05', urgent: false },
@@ -98,6 +177,11 @@ export default function NotificationsScreen() {
   const visible = notifs.filter((n) => !dismissed.includes(n.id));
   const selNotif = notifs.find((n) => n.id === selected);
 
+  const resolveNotif = (id) => {
+    dismissNotification(id);
+    setDismissed((d) => [...d, id]);
+  };
+
   return (
     <View style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={{ paddingBottom: 96 }}>
@@ -105,7 +189,6 @@ export default function NotificationsScreen() {
           <Text style={{ fontSize: 18, fontWeight: '700', color: C.text }}>通知中心</Text>
           <Pressable
             onPress={() => {
-              // MOCK: DELETE /api/notifications per id (MOCKS.md #13)
               notifs.forEach((n) => dismissNotification(n.id));
               setDismissed(notifs.map((n) => n.id));
             }}
@@ -121,7 +204,7 @@ export default function NotificationsScreen() {
               <Pressable
                 key={n.id}
                 onPress={() => {
-                  markNotificationRead(n.id); // MOCK (MOCKS.md #13)
+                  markNotificationRead(n.id);
                   setSelected(n.id);
                 }}
                 style={{ backgroundColor: bg, borderWidth: 0.5, borderColor: border, borderRadius: 14, padding: 13, flexDirection: 'row', gap: 12, position: 'relative' }}
@@ -139,7 +222,7 @@ export default function NotificationsScreen() {
                   <Pressable
                     onPress={(e) => {
                       e.stopPropagation();
-                      dismissNotification(n.id); // MOCK (MOCKS.md #13)
+                      dismissNotification(n.id);
                       setDismissed((d) => [...d, n.id]);
                     }}
                   >
@@ -165,7 +248,16 @@ export default function NotificationsScreen() {
         </View>
       </ScrollView>
 
-      {selNotif && <NotifDetail notif={selNotif} onClose={() => setSelected(null)} />}
+      {selNotif && (
+        <NotifDetail
+          notif={selNotif}
+          onClose={() => setSelected(null)}
+          onCall={onCall}
+          onMap={onMap}
+          goTo={goTo}
+          onResolve={resolveNotif}
+        />
+      )}
     </View>
   );
 }
