@@ -26,9 +26,10 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  memberships   FamilyMember[]
-  refreshTokens RefreshToken[]
-  notifications Notification[]
+  memberships     FamilyMember[]
+  refreshTokens   RefreshToken[]
+  notifications   Notification[]
+  acknowledgedSos SosEvent[]      @relation("AcknowledgedBy")
 }
 
 // ── Opaque refresh tokens (rotated on each /auth/refresh) ──────────────────
@@ -90,6 +91,7 @@ model Elder {
   medications  Medication[]
   healthVitals HealthVital[]
   appointments Appointment[]
+  sosEvents    SosEvent[]
 }
 
 // ── InviteToken ─────────────────────────────────────────────────────────────
@@ -258,4 +260,22 @@ model Appointment {
   elder   Elder  @relation(fields: [elderId], references: [id], onDelete: Cascade)
 
   @@index([elderId, status, scheduledAt])
+}
+
+// ── SOS event ───────────────────────────────────────────────────────────────
+// One row per SOS press. Caregivers can acknowledge to stop re-alerting.
+// Location stored as JSON string (spec §4 format).
+model SosEvent {
+  id             String    @id @default(uuid())
+  triggeredAt    DateTime  @default(now())
+  acknowledgedAt DateTime?
+  location       String?
+
+  elderId String
+  elder   Elder  @relation(fields: [elderId], references: [id], onDelete: Cascade)
+
+  acknowledgedById String?
+  acknowledgedBy   User?   @relation("AcknowledgedBy", fields: [acknowledgedById], references: [id])
+
+  @@index([elderId, triggeredAt])
 }
