@@ -4,6 +4,8 @@ import rateLimit from '@fastify/rate-limit';
 import authPlugin from './plugins/auth';
 import { registerHealthRoutes } from './modules/health/health.routes';
 import { registerAuthRoutes } from './modules/auth/auth.routes';
+import { registerFamilyRoutes } from './modules/family/family.routes';
+import { registerElderRoutes } from './modules/elder/elder.routes';
 import { registerErrorHandler } from './plugins/error-handler';
 
 export interface BuildAppOptions {
@@ -36,6 +38,8 @@ export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInsta
   await app.register(authPlugin);
   await app.register(registerHealthRoutes);
   await app.register(registerAuthRoutes);
+  await app.register(registerFamilyRoutes);
+  await app.register(registerElderRoutes);
 
   return app;
 }

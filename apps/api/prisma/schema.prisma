@@ -66,12 +66,15 @@ model FamilyMember {
   @@unique([userId, familyId])
 }
 
-// ── Elder (長輩) — minimum fields for pairing ──────────────────────────────
-// Full CRUD (profile, avatar, status, …) lands with the elder module PR.
+// ── Elder (長輩) ────────────────────────────────────────────────────────────
+// Profile fields grow as later modules hang off Elder (checkins, medications,
+// vitals, appointments, sos). PR E adds birthDate + avatarUrl.
 model Elder {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   name        String
-  createdAt   DateTime @default(now())
+  birthDate   DateTime?
+  avatarUrl   String?
+  createdAt   DateTime  @default(now())
 
   familyId String
   family   Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
@@ -81,4 +84,20 @@ model Elder {
   pairCodeExpiresAt DateTime?
   deviceToken       String?
   platform          String?
+}
+
+// ── InviteToken ─────────────────────────────────────────────────────────────
+// One-time-use token for `POST /family/:id/invite` → `POST /family/join`.
+// 7-day TTL by default. Rows stay in DB after `usedAt` is set so we have an
+// audit trail; GC can be added in PR K with other BullMQ crons.
+model InviteToken {
+  id          String    @id @default(uuid())
+  token       String    @unique
+  familyId    String
+  createdById String
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([familyId])
 }
