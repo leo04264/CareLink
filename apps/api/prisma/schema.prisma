@@ -89,6 +89,7 @@ model Elder {
   checkins     Checkin[]
   medications  Medication[]
   healthVitals HealthVital[]
+  appointments Appointment[]
 }
 
 // ── InviteToken ─────────────────────────────────────────────────────────────
@@ -233,4 +234,28 @@ model HealthVital {
   elder   Elder  @relation(fields: [elderId], references: [id], onDelete: Cascade)
 
   @@index([elderId, type, measuredAt])
+}
+
+// ── Appointment ─────────────────────────────────────────────────────────────
+enum AppointmentStatus {
+  UPCOMING
+  COMPLETED
+  CANCELLED
+}
+
+model Appointment {
+  id          String            @id @default(uuid())
+  department  String
+  hospital    String
+  scheduledAt DateTime
+  note        String?
+  status      AppointmentStatus @default(UPCOMING)
+  remindDays  Int[]             @default([1, 7])
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  elderId String
+  elder   Elder  @relation(fields: [elderId], references: [id], onDelete: Cascade)
+
+  @@index([elderId, status, scheduledAt])
 }

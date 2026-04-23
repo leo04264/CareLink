@@ -6,6 +6,7 @@ import { assertElderAccess, assertMember } from '../../lib/membership';
 import { computeStreak, hasCheckedInToday } from '../checkin/checkin.service';
 import { getMedicationStatusForElder } from '../medication/medication.service';
 import { getVitalsStatusForElder } from '../vitals/vitals.service';
+import { getNextAppointmentForElder } from '../appointment/appointment.service';
 import type { CreateElderInput, UpdateElderInput, UpdatePushTokenInput } from './elder.schema';
 
 function toSummary(e: {
@@ -77,11 +78,12 @@ export async function updatePushToken(
 export async function getElderStatus(callerId: string, elderId: string): Promise<ElderStatusResponse> {
   await assertElderAccess(callerId, elderId);
 
-  const [today, streak, medStatus, vitalsStatus] = await Promise.all([
+  const [today, streak, medStatus, vitalsStatus, nextAppt] = await Promise.all([
     hasCheckedInToday(elderId),
     computeStreak(elderId),
     getMedicationStatusForElder(elderId),
     getVitalsStatusForElder(elderId),
+    getNextAppointmentForElder(elderId),
   ]);
 
   return {
@@ -91,7 +93,7 @@ export async function getElderStatus(callerId: string, elderId: string): Promise
       streakDays: streak.streakDays,
     },
     medications: medStatus,
-    nextAppointment: null,
+    nextAppointment: nextAppt,
     lastBP: vitalsStatus.lastBP,
     lastGlucose: vitalsStatus.lastGlucose,
   };

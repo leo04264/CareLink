@@ -9,6 +9,7 @@ import { registerElderRoutes } from './modules/elder/elder.routes';
 import { registerCheckinRoutes } from './modules/checkin/checkin.routes';
 import { registerMedicationRoutes } from './modules/medication/medication.routes';
 import { registerVitalsRoutes } from './modules/vitals/vitals.routes';
+import { registerAppointmentRoutes } from './modules/appointment/appointment.routes';
 import { registerErrorHandler } from './plugins/error-handler';
 
 export interface BuildAppOptions {
@@ -46,6 +47,7 @@ export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInsta
   await app.register(registerCheckinRoutes);
   await app.register(registerMedicationRoutes);
   await app.register(registerVitalsRoutes);
+  await app.register(registerAppointmentRoutes);
 
   return app;
 }
