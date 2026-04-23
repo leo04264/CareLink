@@ -34,7 +34,13 @@ export default function CaregiverApp({ onSwitchMode, onHome }) {
           reportStatus={reportStatus}
         />
       )}
-      {tab === 'notifications' && <NotificationsScreen />}
+      {tab === 'notifications' && (
+        <NotificationsScreen
+          onCall={() => setShowCall(true)}
+          onMap={() => setShowMap(true)}
+          goTo={setTab}
+        />
+      )}
       {tab === 'health' && <HealthVitalsScreen />}
       {tab === 'appointments' && <AppointmentsScreen />}
       {tab === 'medications' && <MedicationsScreen />}

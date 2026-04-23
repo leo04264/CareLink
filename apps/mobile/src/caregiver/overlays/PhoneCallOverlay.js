@@ -1,14 +1,27 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, Alert, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { C } from '../../theme/tokens';
 import Pulse from '../../components/Pulse';
 import RippleRings from '../../components/RippleRings';
 import { dial } from '../../services/mocks';
 
+function notImplemented(title) {
+  if (Platform.OS === 'web' && typeof window !== 'undefined' && window.alert) {
+    window.alert(`${title}\n\n此功能尚未實作（MOCK）`);
+    return;
+  }
+  Alert.alert(title, '此功能尚未實作（MOCK）', [{ text: '了解' }]);
+}
+
 export default function PhoneCallOverlay({ name, number, onClose }) {
   const [phase, setPhase] = useState('ringing');
   const [seconds, setSeconds] = useState(0);
+  // Local UI-only toggles for the 3 in-call controls. The underlying call is
+  // mocked, so these don't actually mute audio or route to speaker — they
+  // only flip the button's visual state.
+  const [muted, setMuted] = useState(false);
+  const [speaker, setSpeaker] = useState(false);
   const timerRef = useRef(null);
 
   useEffect(() => {
@@ -57,13 +70,28 @@ export default function PhoneCallOverlay({ name, number, onClose }) {
         </View>
 
         <View style={{ flexDirection: 'row', gap: 28 }}>
-          {[{ icon: '🔇', label: '靜音' }, { icon: '🔊', label: '擴音' }, { icon: '⌨️', label: '鍵盤' }].map((b) => (
-            <View key={b.label} style={{ alignItems: 'center', gap: 8 }}>
-              <View style={{ width: 54, height: 54, borderRadius: 27, backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' }}>
+          {[
+            { key: 'mute', icon: '🔇', label: '靜音', active: muted, onPress: () => setMuted((v) => !v) },
+            { key: 'speaker', icon: '🔊', label: '擴音', active: speaker, onPress: () => setSpeaker((v) => !v) },
+            { key: 'keypad', icon: '⌨️', label: '鍵盤', active: false, onPress: () => notImplemented('撥號鍵盤') },
+          ].map((b) => (
+            <Pressable key={b.key} onPress={b.onPress} style={{ alignItems: 'center', gap: 8 }}>
+              <View
+                style={{
+                  width: 54,
+                  height: 54,
+                  borderRadius: 27,
+                  backgroundColor: b.active ? '#fff' : 'rgba(255,255,255,0.08)',
+                  borderWidth: 0.5,
+                  borderColor: b.active ? '#fff' : 'rgba(255,255,255,0.1)',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
                 <Text style={{ fontSize: 22 }}>{b.icon}</Text>
               </View>
-              <Text style={{ fontSize: 11, color: C.text2 }}>{b.label}</Text>
-            </View>
+              <Text style={{ fontSize: 11, color: b.active ? '#fff' : C.text2 }}>{b.label}</Text>
+            </Pressable>
           ))}
         </View>
 

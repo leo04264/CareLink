@@ -253,7 +253,10 @@ export default function DashboardScreen({ onSOS, onCall, onMap, goTo, reportStat
 
           {/* Health snapshot */}
           <View style={{ backgroundColor: C.card, borderWidth: 0.5, borderColor: C.border, borderRadius: 14, padding: 14 }}>
-            <Text style={{ fontSize: 11, fontWeight: '500', color: C.text3, letterSpacing: 1.5, marginBottom: 12 }}>健康數值</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <Text style={{ fontSize: 11, fontWeight: '500', color: C.text3, letterSpacing: 1.5 }}>健康數值</Text>
+              <Text style={{ fontSize: 10, color: C.text3 }}>點擊查看詳情 →</Text>
+            </View>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
               {[
                 { label: '血壓', value: '126 / 82', unit: 'mmHg', color: C.green, icon: '🩺' },
@@ -261,14 +264,27 @@ export default function DashboardScreen({ onSOS, onCall, onMap, goTo, reportStat
                 { label: '體重', value: '58.5', unit: 'kg', color: C.text2, icon: '⚖️' },
                 { label: '體溫', value: '36.5', unit: '°C', color: C.amber, icon: '🌡️' },
               ].map((h) => (
-                <View key={h.label} style={{ width: '47%', flexGrow: 1, backgroundColor: C.card2, borderWidth: 0.5, borderColor: C.border, borderRadius: 10, padding: 10 }}>
+                <Pressable
+                  key={h.label}
+                  onPress={() => goTo && goTo('health')}
+                  style={({ pressed }) => ({
+                    width: '47%',
+                    flexGrow: 1,
+                    backgroundColor: C.card2,
+                    borderWidth: 0.5,
+                    borderColor: C.border,
+                    borderRadius: 10,
+                    padding: 10,
+                    opacity: pressed ? 0.7 : 1,
+                  })}
+                >
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 }}>
                     <Text style={{ fontSize: 14 }}>{h.icon}</Text>
                     <Text style={{ fontSize: 10, color: C.text3, letterSpacing: 0.5 }}>{h.label}</Text>
                   </View>
                   <Text style={{ fontSize: 18, fontWeight: '600', color: h.color }}>{h.value}</Text>
                   <Text style={{ fontSize: 10, color: C.text3, marginTop: 2 }}>{h.unit}</Text>
-                </View>
+                </Pressable>
               ))}
             </View>
           </View>
