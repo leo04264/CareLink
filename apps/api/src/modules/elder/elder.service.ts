@@ -3,6 +3,7 @@ import { ErrorCodes } from '@carelink/shared';
 import { ApiException } from '../../plugins/error-handler';
 import { prisma } from '../../lib/prisma';
 import { assertElderAccess, assertMember } from '../../lib/membership';
+import { computeStreak, hasCheckedInToday } from '../checkin/checkin.service';
 import type { CreateElderInput, UpdateElderInput, UpdatePushTokenInput } from './elder.schema';
 
 function toSummary(e: {
@@ -69,13 +70,22 @@ export async function updatePushToken(
   });
 }
 
-// Dashboard status. Until checkin / medication / vitals / appointment modules
-// land, all downstream fields are null / zero. The shape is stable so the
-// mobile app can bind today and fill in with real data as each PR lands.
+// Dashboard status. Fields populated as modules ship: PR F fills checkinToday,
+// later PRs fill medications / nextAppointment / lastBP / lastGlucose.
 export async function getElderStatus(callerId: string, elderId: string): Promise<ElderStatusResponse> {
   await assertElderAccess(callerId, elderId);
+
+  const [today, streak] = await Promise.all([
+    hasCheckedInToday(elderId),
+    computeStreak(elderId),
+  ]);
+
   return {
-    checkinToday: { checked: false, checkedAt: null, streakDays: 0 },
+    checkinToday: {
+      checked: today.checked,
+      checkedAt: today.checkedAt ? today.checkedAt.toISOString() : null,
+      streakDays: streak.streakDays,
+    },
     medications: { total: 0, completedToday: 0, nextReminder: null },
     nextAppointment: null,
     lastBP: null,

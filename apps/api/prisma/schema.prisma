@@ -28,6 +28,7 @@ model User {
 
   memberships   FamilyMember[]
   refreshTokens RefreshToken[]
+  notifications Notification[]
 }
 
 // ── Opaque refresh tokens (rotated on each /auth/refresh) ──────────────────
@@ -84,6 +85,8 @@ model Elder {
   pairCodeExpiresAt DateTime?
   deviceToken       String?
   platform          String?
+
+  checkins Checkin[]
 }
 
 // ── InviteToken ─────────────────────────────────────────────────────────────
@@ -100,4 +103,46 @@ model InviteToken {
   createdAt   DateTime  @default(now())
 
   @@index([familyId])
+}
+
+// ── Daily check-in ──────────────────────────────────────────────────────────
+// Long-press 「我很好」 creates one row per press. We derive `today` /
+// `streakDays` from these rows on demand (no denormalized state on Elder).
+model Checkin {
+  id        String   @id @default(uuid())
+  checkedAt DateTime @default(now())
+  note      String?
+
+  elderId String
+  elder   Elder  @relation(fields: [elderId], references: [id], onDelete: Cascade)
+
+  @@index([elderId, checkedAt])
+}
+
+// ── Notification ────────────────────────────────────────────────────────────
+// One row per recipient (fan-out happens at write time via `notifyFamily`).
+// Push delivery (FCM/Expo) is deferred to PR K — we only write the DB row for
+// now so the caregiver app can poll /notifications and see fresh items.
+enum NotificationType {
+  CHECKIN
+  MEDICATION
+  MEDICATION_MISSED
+  SOS
+  APPOINTMENT
+  CHECKIN_OVERDUE
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  type      NotificationType
+  title     String
+  body      String
+  data      Json?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }
