@@ -225,35 +225,62 @@ Push to `master` 且有動到 `apps/mobile/**` / `packages/**` / root `package*.
 
 ## Agent Workflow
 
-本專案使用 5 個專門的 subagents 協同開發。定義檔在 `.claude/agents/`。
+本專案使用 **需求驅動的閉環流程**：User 只提需求，其餘由 4 個專門 subagent +
+1 個協調者處理。定義檔在 `.claude/agents/` 和 `.claude/skills/`。
+
+### 入口
+
+- **`/feature <需求>`** — 新功能請求的**唯一入口**。觸發完整管線。（定義於 `.claude/skills/feature-dev.md`）
+- **`/refine <修改>`** — 對 spec 或結果要求改動時用，回到 PM 再跑一輪。（定義於 `.claude/skills/refine-spec.md`）
+
+### 管線
 
 ```
-User request
-  ↓
-pm-feature-planner         （寫 spec、拆 task、訂驗收標準）
-  ↓
-rn-expo-implementer        （照著 task 寫 code，不擴張範圍）
-  ↓
-qa-test-runner             （跑 lint / typecheck / 手動檢查 flow）
-  ↓                        （若 FAIL → 退回 implementer）
-reality-checker            （逐條核對驗收標準，找證據，默認 NEEDS WORK）
-  ↓                        （若 NEEDS WORK → 退回 implementer）
-User review
+User: /feature <需求>
+      │
+      ▼
+pm-feature-planner → 產出 spec
+      │
+      ▼
+  ╔═══════════════════════════════╗
+  ║ GATE 1：User 確認 spec          ║ ← 強制，不能略過
+  ║  ├── 同意 → 進 impl            ║
+  ║  └── /refine <修改> → 回 PM    ║
+  ╚═══════════════════════════════╝
+      │
+      ▼
+rn-expo-implementer → 寫 code
+      │
+      ▼
+qa-test-runner（lint / typecheck / 靜態走查）
+      │
+      ├── FAIL → 回 implementer（自動，最多 3 輪後升級 user）
+      │
+      ▼
+reality-checker → 證據收集（**不做決策**，只把每條 acceptance criterion 的證據攤給 user）
+      │
+      ▼
+  ╔═══════════════════════════════╗
+  ║ GATE 2：User 終驗收             ║ ← 強制
+  ║  ├── 同意 → 任務完成           ║
+  ║  ├── /refine <修改> → 回 PM    ║
+  ║  └── 指定小修 → 回 implementer ║
+  ╚═══════════════════════════════╝
 ```
 
-**規則**：未經 `reality-checker` 標為 `READY FOR USER REVIEW`，任務都不算完成。
+### 兩條核心規則
 
-**Orchestration**：由 `workflow-orchestrator` 排程流程。一般情況下直接呼叫 orchestrator，讓它依序叫起其他 agent；也可單獨呼叫單一 agent 處理局部工作。
+1. **Gate 1 / Gate 2 都是強制的** — AI 不能替 user 決定跳過。
+2. **最終決策者是 user**，不是 reality-checker。reality-checker 的責任是把證據準備好讓 user 判斷，不是宣告「可以放行」。
 
 ### 何時用哪個
 
-| 情境 | Agent |
+| 情境 | 入口 |
 |---|---|
-| 使用者有新功能想法，先不要動 code | `pm-feature-planner` |
-| 已有明確 task + 驗收標準，要直接寫 code | `rn-expo-implementer` |
-| 想在 commit 前把關程式碼品質 | `qa-test-runner` |
-| 要判斷「這個真的能交給使用者了嗎」 | `reality-checker` |
-| 多步驟、跨 agent 的完整功能流程 | `workflow-orchestrator` |
+| 新功能想法 | `/feature <需求>` |
+| 對目前 spec 或結果想改 | `/refine <修改>` |
+| 想針對某個局部直接呼叫單一 agent（小修、偵錯） | 直接 `Agent(subagent_type=...)` |
+| 多步驟、完整 pipeline | `/feature` 內部已經叫 `workflow-orchestrator` 處理 |
 
 ---
 
