@@ -4,9 +4,10 @@ Fastify + TypeScript backend for CareLink. Full spec: [`spec/carelink-backend-sp
 
 ## Status
 
-- ✅ PR B — skeleton: `/health` endpoint, CORS, rate-limit, error envelope, shared types
-- ⏸ **Deploy deferred** — runs on `localhost:3000` only for now; mobile still uses mocks. **Must be resolved before demo to anyone outside the dev machine.** See [`docs/MOCKS.md`](../../docs/MOCKS.md#-demo-前必須決定後端部署方案) for options (Render free / Fly paid / Hetzner / Oracle).
-- ⏳ PR D+ — implement modules per spec §5 (auth, elder, checkin, medication, …). These can land while deployment is still unresolved; mobile continues hitting mocks until the API is cloud-hosted.
+- ✅ PR B — skeleton: `/health`, CORS, rate-limit, error envelope, shared types
+- ✅ PR D — `/auth` module: register / login / refresh / logout + elder pair / verify; JWT with user + elder namespaces; bcryptjs password hashing; RefreshToken rotation stored in DB
+- ⏸ **Deploy deferred** — runs on `localhost:3000` only for now; mobile still uses mocks. See [`docs/MOCKS.md`](../../docs/MOCKS.md#-demo-前必須決定後端部署方案) for options.
+- ⏳ PR E+ — remaining modules per spec §5 (family, elder, checkin, medication, vitals, appointment, sos, notification, media)
 
 ## Local dev
 
@@ -14,20 +15,40 @@ Fastify + TypeScript backend for CareLink. Full spec: [`spec/carelink-backend-sp
 # From repo root
 npm install
 
-# Start supporting services (Postgres + Redis)
-docker compose -f infra/docker-compose.dev.yml up -d
+# 1. Start Postgres + Redis
+npm run infra:up
 
-# Copy env template
-cp apps/api/.env.example apps/api/.env
+# 2. Configure env
+cp apps/api/.env.example apps/api/.env   # then edit JWT_SECRET
 
-# Run API with hot-reload
+# 3. Generate Prisma client + run migrations
+npm -w @carelink/api run db:generate
+npm -w @carelink/api run db:migrate       # or db:migrate:dev for interactive
+
+# 4. Start API with hot-reload
 npm run dev:api
 ```
 
-Hit `http://localhost:3000/health` — you should see:
+### Smoke test
 
-```json
-{ "ok": true, "data": { "status": "ok", "ts": "...", "service": "carelink-api", "version": "0.1.0" } }
+```bash
+# Health
+curl -s localhost:3000/health
+
+# Register (creates a User + a Family + PRIMARY membership)
+curl -s -X POST localhost:3000/auth/register \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"志明","email":"zm@example.com","password":"password123"}'
+
+# Login (same credentials)
+curl -s -X POST localhost:3000/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"zm@example.com","password":"password123"}'
+
+# Refresh (rotates the refresh token)
+curl -s -X POST localhost:3000/auth/refresh \
+  -H 'Content-Type: application/json' \
+  -d '{"refreshToken":"<paste refreshToken from login>"}'
 ```
 
 ## Layout
