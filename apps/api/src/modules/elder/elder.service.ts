@@ -4,6 +4,7 @@ import { ApiException } from '../../plugins/error-handler';
 import { prisma } from '../../lib/prisma';
 import { assertElderAccess, assertMember } from '../../lib/membership';
 import { computeStreak, hasCheckedInToday } from '../checkin/checkin.service';
+import { getMedicationStatusForElder } from '../medication/medication.service';
 import type { CreateElderInput, UpdateElderInput, UpdatePushTokenInput } from './elder.schema';
 
 function toSummary(e: {
@@ -75,9 +76,10 @@ export async function updatePushToken(
 export async function getElderStatus(callerId: string, elderId: string): Promise<ElderStatusResponse> {
   await assertElderAccess(callerId, elderId);
 
-  const [today, streak] = await Promise.all([
+  const [today, streak, medStatus] = await Promise.all([
     hasCheckedInToday(elderId),
     computeStreak(elderId),
+    getMedicationStatusForElder(elderId),
   ]);
 
   return {
@@ -86,7 +88,7 @@ export async function getElderStatus(callerId: string, elderId: string): Promise
       checkedAt: today.checkedAt ? today.checkedAt.toISOString() : null,
       streakDays: streak.streakDays,
     },
-    medications: { total: 0, completedToday: 0, nextReminder: null },
+    medications: medStatus,
     nextAppointment: null,
     lastBP: null,
     lastGlucose: null,

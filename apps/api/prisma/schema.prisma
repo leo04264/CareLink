@@ -86,7 +86,8 @@ model Elder {
   deviceToken       String?
   platform          String?
 
-  checkins Checkin[]
+  checkins    Checkin[]
+  medications Medication[]
 }
 
 // ── InviteToken ─────────────────────────────────────────────────────────────
@@ -145,4 +146,65 @@ model Notification {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
+}
+
+// ── Medication ──────────────────────────────────────────────────────────────
+enum MedicationFreq {
+  DAILY
+  EVERY_OTHER
+  WEEKLY
+  AS_NEEDED
+}
+
+enum MedicationStatus {
+  ACTIVE
+  PAUSED
+  DELETED
+}
+
+model Medication {
+  id            String           @id @default(uuid())
+  name          String
+  dosage        String?
+  amountPerDose String?
+  color         String?
+  note          String?
+  frequency     MedicationFreq   @default(DAILY)
+  status        MedicationStatus @default(ACTIVE)
+  pauseReason   String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  elderId   String
+  elder     Elder                @relation(fields: [elderId], references: [id], onDelete: Cascade)
+  schedules MedicationSchedule[]
+  logs      MedicationLog[]
+
+  @@index([elderId, status])
+}
+
+model MedicationSchedule {
+  id          String  @id @default(uuid())
+  time        String  // "HH:MM"
+  mealContext String?
+  amountNote  String?
+  isEnabled   Boolean @default(true)
+
+  medicationId String
+  medication   Medication @relation(fields: [medicationId], references: [id], onDelete: Cascade)
+
+  @@index([medicationId])
+}
+
+model MedicationLog {
+  id           String   @id @default(uuid())
+  takenAt      DateTime @default(now())
+  photoUrl     String?
+  confirmed    Boolean  @default(false)
+  scheduleTime String?  // the HH:MM of the schedule this log fulfills
+
+  medicationId String
+  medication   Medication @relation(fields: [medicationId], references: [id], onDelete: Cascade)
+
+  @@index([medicationId, takenAt])
 }

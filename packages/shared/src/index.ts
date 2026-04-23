@@ -5,3 +5,4 @@ export * from './api';
 export * from './auth';
 export * from './family';
 export * from './checkin';
+export * from './medication';
