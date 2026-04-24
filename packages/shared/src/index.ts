@@ -9,3 +9,4 @@ export * from './medication';
 export * from './vitals';
 export * from './appointment';
 export * from './sos';
+export * from './notification';

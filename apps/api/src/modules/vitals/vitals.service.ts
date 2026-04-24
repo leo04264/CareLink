@@ -58,13 +58,13 @@ export async function createBP(
     },
   });
 
-  // TODO(PR K): actual push. For now we only write the notification row when
-  // the reading is HIGH, matching spec §5.6 "收縮壓 ≥ 140 自動推播".
+  // Spec §5.6 "收縮壓 ≥ 140 自動推播" — classified as VITALS_ALERT so
+  // caregivers can filter it separately from medication events.
   if (bpStatus(input.systolic, input.diastolic) === 'HIGH') {
     const elder = await prisma.elder.findUnique({ where: { id: elderId }, select: { name: true } });
     await notifyFamily({
       elderId,
-      type: 'MEDICATION', // reuse enum; PR K may add BP_ELEVATED if needed
+      type: 'VITALS_ALERT',
       title: `${elder?.name ?? '長輩'} 血壓偏高`,
       body: `收縮壓 ${input.systolic} / 舒張壓 ${input.diastolic} mmHg`,
       data: { vitalId: row.id, systolic: input.systolic, diastolic: input.diastolic },

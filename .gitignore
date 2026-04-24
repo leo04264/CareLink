@@ -12,3 +12,4 @@ npm-debug.*
 .env
 .env.local
 .env.*.local
+dump.rdb
