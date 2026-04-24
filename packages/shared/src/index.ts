@@ -10,3 +10,4 @@ export * from './vitals';
 export * from './appointment';
 export * from './sos';
 export * from './notification';
+export * from './media';

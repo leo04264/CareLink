@@ -12,6 +12,8 @@ import { registerVitalsRoutes } from './modules/vitals/vitals.routes';
 import { registerAppointmentRoutes } from './modules/appointment/appointment.routes';
 import { registerSosRoutes } from './modules/sos/sos.routes';
 import { registerNotificationRoutes } from './modules/notification/notification.routes';
+import { registerMediaRoutes } from './modules/media/media.routes';
+import { ensureBucketReady } from './lib/r2';
 import { registerErrorHandler } from './plugins/error-handler';
 
 export interface BuildAppOptions {
@@ -52,6 +54,12 @@ export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInsta
   await app.register(registerAppointmentRoutes);
   await app.register(registerSosRoutes);
   await app.register(registerNotificationRoutes);
+  await app.register(registerMediaRoutes);
+
+  // Idempotent bucket setup. On MinIO this creates carelink-media and sets
+  // a public-read policy; on R2 the bucket is pre-created so this becomes
+  // a no-op. Failures are logged but don't block boot.
+  void ensureBucketReady().catch((err) => app.log.warn({ err }, 'r2 bucket setup'));
 
   return app;
 }
