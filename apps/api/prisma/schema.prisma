@@ -32,6 +32,7 @@ model User {
   acknowledgedSos SosEvent[]            @relation("AcknowledgedBy")
   pushTokens      PushToken[]
   notifSettings   NotificationSetting?
+  uploadedMedia   Media[]
 }
 
 // ── Opaque refresh tokens (rotated on each /auth/refresh) ──────────────────
@@ -89,11 +90,12 @@ model Elder {
   deviceToken       String?
   platform          String?
 
-  checkins     Checkin[]
-  medications  Medication[]
-  healthVitals HealthVital[]
-  appointments Appointment[]
-  sosEvents    SosEvent[]
+  checkins      Checkin[]
+  medications   Medication[]
+  healthVitals  HealthVital[]
+  appointments  Appointment[]
+  sosEvents     SosEvent[]
+  uploadedMedia Media[]
 }
 
 // ── InviteToken ─────────────────────────────────────────────────────────────
@@ -318,4 +320,24 @@ model SosEvent {
   acknowledgedBy   User?   @relation("AcknowledgedBy", fields: [acknowledgedById], references: [id])
 
   @@index([elderId, triggeredAt])
+}
+
+// ── Media (spec §5.10 + §8) ────────────────────────────────────────────────
+// One row per presigned-URL issuance. `key` is the S3 object path;
+// `confirmedAt` flips to non-null after the client PUTs successfully and
+// calls /media/confirm. Uploader is one of user or elder — never both.
+model Media {
+  id          String    @id @default(uuid())
+  key         String    @unique
+  contentType String
+  context     String    // "medication-log" / "elder-avatar" / ...
+  confirmedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  uploaderUserId  String?
+  uploaderUser    User?   @relation(fields: [uploaderUserId], references: [id], onDelete: SetNull)
+  uploaderElderId String?
+  uploaderElder   Elder?  @relation(fields: [uploaderElderId], references: [id], onDelete: SetNull)
+
+  @@index([context, createdAt])
 }

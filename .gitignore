@@ -13,3 +13,4 @@ npm-debug.*
 .env.local
 .env.*.local
 dump.rdb
+scripts/dev-s3rver.mjs
