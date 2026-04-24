@@ -29,7 +29,9 @@ model User {
   memberships     FamilyMember[]
   refreshTokens   RefreshToken[]
   notifications   Notification[]
-  acknowledgedSos SosEvent[]      @relation("AcknowledgedBy")
+  acknowledgedSos SosEvent[]            @relation("AcknowledgedBy")
+  pushTokens      PushToken[]
+  notifSettings   NotificationSetting?
 }
 
 // ── Opaque refresh tokens (rotated on each /auth/refresh) ──────────────────
@@ -135,6 +137,7 @@ enum NotificationType {
   SOS
   APPOINTMENT
   CHECKIN_OVERDUE
+  VITALS_ALERT
 }
 
 model Notification {
@@ -260,6 +263,43 @@ model Appointment {
   elder   Elder  @relation(fields: [elderId], references: [id], onDelete: Cascade)
 
   @@index([elderId, status, scheduledAt])
+}
+
+// ── User notification prefs ─────────────────────────────────────────────────
+// One row per user. PUT endpoint upserts. Defaults are "all on, quiet
+// 22:00–07:00" — created lazily by GET if the user hasn't saved yet.
+model NotificationSetting {
+  id String @id @default(uuid())
+
+  checkin          Boolean @default(true)
+  medication       Boolean @default(true)
+  medicationMissed Boolean @default(true)
+  sos              Boolean @default(true)
+  appointment      Boolean @default(true)
+  checkinOverdue   Boolean @default(true)
+  vitalsAlert      Boolean @default(true)
+
+  quietStart String? // "HH:MM" local — null disables quiet hours
+  quietEnd   String?
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ── Push tokens ─────────────────────────────────────────────────────────────
+// One user can have multiple devices (phone + tablet). `token` alone is
+// globally unique; (userId, token) composite caught in assertions too.
+model PushToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  platform  String // "ios" | "android" | "web"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 // ── SOS event ───────────────────────────────────────────────────────────────

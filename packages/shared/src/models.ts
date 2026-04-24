@@ -2,7 +2,6 @@ import type {
   AppointmentUrgency,
   BsContext,
   FamilyMemberRole,
-  NotificationType,
   ReportStatus,
   VitalSource,
   VitalType,
@@ -105,13 +104,7 @@ export interface EmergencyContact {
 }
 
 // ── Notifications ─────────────────────────────────────────────────────────
-export interface NotificationItem {
-  id: string;
-  type: NotificationType;
-  title: string;
-  body: string;
-  at: ISODateString;
-  read: boolean;
-  urgent?: boolean;
-  meta?: Record<string, unknown>;
-}
+// The canonical NotificationItem now lives in notification.ts (shape tracks
+// the backend's Notification table). Kept empty here to avoid the name
+// clash; downstream consumers should import from '@carelink/shared' which
+// re-exports notification.ts's version.
