@@ -10,6 +10,7 @@ declare module 'fastify' {
   interface FastifyInstance {
     requireUser: (req: FastifyRequest, reply: FastifyReply) => Promise<void>;
     requireElder: (req: FastifyRequest, reply: FastifyReply) => Promise<void>;
+    requireUserOrElder: (req: FastifyRequest, reply: FastifyReply) => Promise<void>;
     signUserToken: (p: UserTokenPayload) => string;
     signElderToken: (p: ElderTokenPayload) => string;
   }
@@ -54,6 +55,29 @@ export default fp(async function authPlugin(app) {
       req.currentUser = p;
     } catch {
       throw new ApiException(ErrorCodes.AUTH_UNAUTHORIZED, 'Missing or invalid elder token');
+    }
+  });
+
+  // Accepts either user or elder token. Used for endpoints where both sides
+  // are valid senders (e.g. POST /vitals — elder enters via their own input
+  // screen; caregiver enters via the health tab).
+  app.decorate('requireUserOrElder', async function requireUserOrElder(req, _reply) {
+    try {
+      const payload = await (req as FastifyRequest & { userJwtVerify(): Promise<unknown> }).userJwtVerify();
+      const p = payload as UserTokenPayload;
+      if (p.type === 'user') {
+        req.currentUser = p;
+        return;
+      }
+    } catch { /* fall through to elder */ }
+
+    try {
+      const payload = await (req as FastifyRequest & { elderJwtVerify(): Promise<unknown> }).elderJwtVerify();
+      const p = payload as ElderTokenPayload;
+      if (p.type !== 'elder') throw new Error('wrong-namespace');
+      req.currentUser = p;
+    } catch {
+      throw new ApiException(ErrorCodes.AUTH_UNAUTHORIZED, 'Missing or invalid token');
     }
   });
 

@@ -26,8 +26,10 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  memberships   FamilyMember[]
-  refreshTokens RefreshToken[]
+  memberships     FamilyMember[]
+  refreshTokens   RefreshToken[]
+  notifications   Notification[]
+  acknowledgedSos SosEvent[]      @relation("AcknowledgedBy")
 }
 
 // ── Opaque refresh tokens (rotated on each /auth/refresh) ──────────────────
@@ -84,6 +86,12 @@ model Elder {
   pairCodeExpiresAt DateTime?
   deviceToken       String?
   platform          String?
+
+  checkins     Checkin[]
+  medications  Medication[]
+  healthVitals HealthVital[]
+  appointments Appointment[]
+  sosEvents    SosEvent[]
 }
 
 // ── InviteToken ─────────────────────────────────────────────────────────────
@@ -100,4 +108,174 @@ model InviteToken {
   createdAt   DateTime  @default(now())
 
   @@index([familyId])
+}
+
+// ── Daily check-in ──────────────────────────────────────────────────────────
+// Long-press 「我很好」 creates one row per press. We derive `today` /
+// `streakDays` from these rows on demand (no denormalized state on Elder).
+model Checkin {
+  id        String   @id @default(uuid())
+  checkedAt DateTime @default(now())
+  note      String?
+
+  elderId String
+  elder   Elder  @relation(fields: [elderId], references: [id], onDelete: Cascade)
+
+  @@index([elderId, checkedAt])
+}
+
+// ── Notification ────────────────────────────────────────────────────────────
+// One row per recipient (fan-out happens at write time via `notifyFamily`).
+// Push delivery (FCM/Expo) is deferred to PR K — we only write the DB row for
+// now so the caregiver app can poll /notifications and see fresh items.
+enum NotificationType {
+  CHECKIN
+  MEDICATION
+  MEDICATION_MISSED
+  SOS
+  APPOINTMENT
+  CHECKIN_OVERDUE
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  type      NotificationType
+  title     String
+  body      String
+  data      Json?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+// ── Medication ──────────────────────────────────────────────────────────────
+enum MedicationFreq {
+  DAILY
+  EVERY_OTHER
+  WEEKLY
+  AS_NEEDED
+}
+
+enum MedicationStatus {
+  ACTIVE
+  PAUSED
+  DELETED
+}
+
+model Medication {
+  id            String           @id @default(uuid())
+  name          String
+  dosage        String?
+  amountPerDose String?
+  color         String?
+  note          String?
+  frequency     MedicationFreq   @default(DAILY)
+  status        MedicationStatus @default(ACTIVE)
+  pauseReason   String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  elderId   String
+  elder     Elder                @relation(fields: [elderId], references: [id], onDelete: Cascade)
+  schedules MedicationSchedule[]
+  logs      MedicationLog[]
+
+  @@index([elderId, status])
+}
+
+model MedicationSchedule {
+  id          String  @id @default(uuid())
+  time        String  // "HH:MM"
+  mealContext String?
+  amountNote  String?
+  isEnabled   Boolean @default(true)
+
+  medicationId String
+  medication   Medication @relation(fields: [medicationId], references: [id], onDelete: Cascade)
+
+  @@index([medicationId])
+}
+
+model MedicationLog {
+  id           String   @id @default(uuid())
+  takenAt      DateTime @default(now())
+  photoUrl     String?
+  confirmed    Boolean  @default(false)
+  scheduleTime String?  // the HH:MM of the schedule this log fulfills
+
+  medicationId String
+  medication   Medication @relation(fields: [medicationId], references: [id], onDelete: Cascade)
+
+  @@index([medicationId, takenAt])
+}
+
+// ── Health vitals (BP + BS share the table) ─────────────────────────────────
+enum HealthVitalType {
+  BLOOD_PRESSURE
+  BLOOD_SUGAR
+}
+
+model HealthVital {
+  id           String          @id @default(uuid())
+  type         HealthVitalType
+  measuredAt   DateTime        @default(now())
+
+  // BP (type = BLOOD_PRESSURE)
+  systolic  Int?
+  diastolic Int?
+
+  // BS (type = BLOOD_SUGAR)
+  glucoseValue Float?
+  mealContext  String?
+
+  elderId String
+  elder   Elder  @relation(fields: [elderId], references: [id], onDelete: Cascade)
+
+  @@index([elderId, type, measuredAt])
+}
+
+// ── Appointment ─────────────────────────────────────────────────────────────
+enum AppointmentStatus {
+  UPCOMING
+  COMPLETED
+  CANCELLED
+}
+
+model Appointment {
+  id          String            @id @default(uuid())
+  department  String
+  hospital    String
+  scheduledAt DateTime
+  note        String?
+  status      AppointmentStatus @default(UPCOMING)
+  remindDays  Int[]             @default([1, 7])
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  elderId String
+  elder   Elder  @relation(fields: [elderId], references: [id], onDelete: Cascade)
+
+  @@index([elderId, status, scheduledAt])
+}
+
+// ── SOS event ───────────────────────────────────────────────────────────────
+// One row per SOS press. Caregivers can acknowledge to stop re-alerting.
+// Location stored as JSON string (spec §4 format).
+model SosEvent {
+  id             String    @id @default(uuid())
+  triggeredAt    DateTime  @default(now())
+  acknowledgedAt DateTime?
+  location       String?
+
+  elderId String
+  elder   Elder  @relation(fields: [elderId], references: [id], onDelete: Cascade)
+
+  acknowledgedById String?
+  acknowledgedBy   User?   @relation("AcknowledgedBy", fields: [acknowledgedById], references: [id])
+
+  @@index([elderId, triggeredAt])
 }
