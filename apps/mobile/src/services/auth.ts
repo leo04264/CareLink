@@ -53,7 +53,6 @@ export async function logout(): Promise<void> {
       await apiRequest<{ ok: true }>('/auth/logout', {
         method: 'POST',
         body: { refreshToken },
-        auth: false,
       });
     } catch {
       // Best-effort. Even if server logout fails we still clear locally.
