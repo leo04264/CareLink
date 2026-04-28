@@ -28,7 +28,8 @@ export default function MedicationsScreen() {
     { id: 4, name: '阿斯匹靈', dose: '1 顆', slots: [{ time: '21:00', meal: '睡前', on: true }], note: '手術前停藥，預計 5/10 後恢復。', color: C.text3, active: false, pauseReason: '手術前停藥，預計 5/10 後恢復' },
   ]);
 
-  const dayData = {
+  type DoseStatus = { done: boolean; done2?: boolean };
+  const dayData: Record<number, DoseStatus[]> = {
     [todayIdx]: [{ done: true }, { done: true }, { done: false }, { done: true, done2: false }],
     [(todayIdx + 6) % 7]: [{ done: true }, { done: true }, { done: true }, { done: true, done2: true }],
     [(todayIdx + 5) % 7]: [{ done: true }, { done: false }, { done: true }, { done: true, done2: false }],
@@ -38,7 +39,7 @@ export default function MedicationsScreen() {
     [(todayIdx + 1) % 7]: [{ done: true }, { done: true }, { done: true }, { done: true, done2: true }],
   };
 
-  const curData = dayData[selIdx] || meds.map(() => ({ done: false }));
+  const curData: DoseStatus[] = dayData[selIdx] || meds.map(() => ({ done: false }));
   const doneCount = curData.filter((d) => d.done).length + curData.filter((d) => d.done2).length;
   const totalDoses = meds.filter((m) => m.active).reduce((s, m) => s + m.slots.filter((x) => x.on).length, 0);
   const activeCount = meds.filter((m) => m.active).length;

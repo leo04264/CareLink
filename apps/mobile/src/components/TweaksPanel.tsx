@@ -42,11 +42,11 @@ export default function TweaksPanel({ visible, onClose }) {
           <View>
             <Text style={{ fontSize: 11, color: C.text2, marginBottom: 8 }}>長輩回報狀態</Text>
             <View style={{ gap: 5 }}>
-              {[
+              {([
                 { v: 'ok', label: '✅ 已回報（正常）', color: C.green },
                 { v: 'warning', label: '⚠️ 尚未回報（警告）', color: C.amber },
                 { v: 'critical', label: '🚨 超過 24 小時（危急）', color: C.red },
-              ].map((opt) => {
+              ] as const).map((opt) => {
                 const active = tweaks.reportStatus === opt.v;
                 return (
                   <Pressable

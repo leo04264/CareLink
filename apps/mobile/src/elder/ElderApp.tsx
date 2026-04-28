@@ -7,7 +7,12 @@ import ElderMedication from './ElderMedication';
 import ElderHealthInput from './ElderHealthInput';
 import ElderAppointmentView from './ElderAppointmentView';
 
-export default function ElderApp({ onSwitchMode }) {
+interface ElderAppProps {
+  onSwitchMode: () => void;
+  onHome?: () => void;
+}
+
+export default function ElderApp({ onSwitchMode }: ElderAppProps) {
   const [screen, setScreen] = useState('home');
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
