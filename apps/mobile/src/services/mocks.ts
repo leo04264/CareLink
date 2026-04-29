@@ -16,10 +16,12 @@
 import { Alert, Linking, Platform } from 'react-native';
 
 // ---- tiny helpers ---------------------------------------------------------
-const log = (tag, msg, ...rest) => console.log(`[MOCK] ${tag}`, msg, ...rest);
+const log = (tag: string, msg: unknown = '', ...rest: unknown[]) =>
+  // eslint-disable-next-line no-console
+  console.log(`[MOCK] ${tag}`, msg, ...rest);
 const delay = (ms = 250) => new Promise((r) => setTimeout(r, ms));
 
-function mockAlert(title, body) {
+function mockAlert(title: string, body: string) {
   if (Platform.OS === 'web') {
     if (typeof window !== 'undefined' && window.alert) {
       window.alert(`${title}\n\n${body}`);

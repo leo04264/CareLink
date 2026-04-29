@@ -1,7 +1,13 @@
-import React, { useEffect, useRef } from 'react';
-import { Animated, Easing } from 'react-native';
+import React, { useEffect, useRef, type ReactNode } from 'react';
+import { Animated, Easing, type StyleProp, type ViewStyle } from 'react-native';
 
-export default function Spin({ children, duration = 900, style }) {
+interface SpinProps {
+  children?: ReactNode;
+  duration?: number;
+  style?: StyleProp<ViewStyle>;
+}
+
+export default function Spin({ children, duration = 900, style }: SpinProps) {
   const anim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     const loop = Animated.loop(

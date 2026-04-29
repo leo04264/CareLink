@@ -2,10 +2,19 @@ import React from 'react';
 import { View, Text, Pressable, TextInput, Modal } from 'react-native';
 import { C } from '../theme/tokens';
 import { useTweaks } from '../context/TweaksContext';
+import { useAuth } from '../context/AuthContext';
+import { getApiBaseUrl } from '../services/apiConfig';
 import Toggle from './Toggle';
 
-export default function TweaksPanel({ visible, onClose }) {
+interface TweaksPanelProps {
+  visible: boolean;
+  onClose: () => void;
+}
+
+export default function TweaksPanel({ visible, onClose }: TweaksPanelProps) {
   const { tweaks, setTweak } = useTweaks();
+  const { mode: authMode, liveAvailable, setMode: setAuthMode, user, logout } = useAuth();
+  const baseUrl = getApiBaseUrl();
   if (!visible) return null;
   return (
     <Modal transparent animationType="fade" onRequestClose={onClose}>
@@ -14,10 +23,39 @@ export default function TweaksPanel({ visible, onClose }) {
           <View style={{ width: 36, height: 3, backgroundColor: C.border2, borderRadius: 2, alignSelf: 'center' }} />
           <Text style={{ fontSize: 12, fontWeight: '700', color: C.text3, letterSpacing: 1.5, textTransform: 'uppercase' }}>Tweaks</Text>
 
+          <View style={{ backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 10, borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.08)', padding: 10 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+              <Text style={{ fontSize: 12, color: C.text }}>連線後端</Text>
+              <Toggle
+                on={authMode === 'live'}
+                onChange={(v) => setAuthMode(v ? 'live' : 'mock')}
+                size="sm"
+              />
+            </View>
+            <Text style={{ fontSize: 10, color: C.text3, marginTop: 2 }}>
+              {authMode === 'live'
+                ? `Live → ${baseUrl ?? '(未偵測到)'}`
+                : 'Demo (mock) — 不需要後端'}
+            </Text>
+            {!liveAvailable && authMode === 'mock' && (
+              <Text style={{ fontSize: 10, color: C.amber, marginTop: 4 }}>
+                ⚠ 未偵測到後端 URL（需 Expo dev server 或 EXPO_PUBLIC_API_URL）
+              </Text>
+            )}
+            {authMode === 'live' && user && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, paddingTop: 8, borderTopWidth: 0.5, borderTopColor: 'rgba(255,255,255,0.08)' }}>
+                <Text style={{ fontSize: 11, color: C.text2 }}>已登入：{user.name}</Text>
+                <Pressable onPress={logout} style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 6, backgroundColor: C.redGlow, borderWidth: 0.5, borderColor: C.redDim }}>
+                  <Text style={{ fontSize: 11, color: C.red }}>登出</Text>
+                </Pressable>
+              </View>
+            )}
+          </View>
+
           <View>
             <Text style={{ fontSize: 11, color: C.text2, marginBottom: 6 }}>強調色</Text>
             <View style={{ flexDirection: 'row', gap: 8 }}>
-              {[['#14b8a6', 'Teal'], ['#f59e0b', 'Amber'], ['#3b82f6', 'Blue'], ['#22c55e', 'Green']].map(([c]) => (
+              {([['#14b8a6', 'Teal'], ['#f59e0b', 'Amber'], ['#3b82f6', 'Blue'], ['#22c55e', 'Green']] as const).map(([c]) => (
                 <Pressable
                   key={c}
                   onPress={() => setTweak('accentColor', c)}
@@ -42,11 +80,11 @@ export default function TweaksPanel({ visible, onClose }) {
           <View>
             <Text style={{ fontSize: 11, color: C.text2, marginBottom: 8 }}>長輩回報狀態</Text>
             <View style={{ gap: 5 }}>
-              {[
+              {([
                 { v: 'ok', label: '✅ 已回報（正常）', color: C.green },
                 { v: 'warning', label: '⚠️ 尚未回報（警告）', color: C.amber },
                 { v: 'critical', label: '🚨 超過 24 小時（危急）', color: C.red },
-              ].map((opt) => {
+              ] as const).map((opt) => {
                 const active = tweaks.reportStatus === opt.v;
                 return (
                   <Pressable

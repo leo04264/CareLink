@@ -11,10 +11,12 @@ import {
 import { Syne_500Medium, Syne_700Bold } from '@expo-google-fonts/syne';
 import { C } from './src/theme/tokens';
 import { TweaksProvider } from './src/context/TweaksContext';
+import { AuthProvider, useAuth } from './src/context/AuthContext';
 import CaregiverApp from './src/caregiver/CaregiverApp';
 import ElderApp from './src/elder/ElderApp';
+import LoginScreen from './src/auth/LoginScreen';
 
-function ModeSelector({ onSelect }) {
+function ModeSelector({ onSelect }: { onSelect: (id: string) => void }) {
   const modes = [
     { id: 'caregiver', icon: '👨‍💻', title: '子女端', sub: '儀表板、通知、藥物管理' },
     { id: 'elder', icon: '👵', title: '長輩端', sub: '我很好、SOS、服藥提醒' },
@@ -44,7 +46,6 @@ function ModeSelector({ onSelect }) {
 }
 
 export default function App() {
-  const [mode, setMode] = useState('selector');
   const [fontsLoaded] = useFonts({
     NotoSansTC_400Regular,
     NotoSansTC_500Medium,
@@ -56,23 +57,47 @@ export default function App() {
 
   return (
     <TweaksProvider>
-      <View style={styles.root}>
-        <ExpoStatusBar style="light" />
-        <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
-          {!fontsLoaded ? (
-            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-              <ActivityIndicator color={C.amber} />
-            </View>
-          ) : (
-            <>
-              {mode === 'selector' && <ModeSelector onSelect={setMode} />}
-              {mode === 'caregiver' && <CaregiverApp onSwitchMode={() => setMode('elder')} onHome={() => setMode('selector')} />}
-              {mode === 'elder' && <ElderApp onSwitchMode={() => setMode('caregiver')} onHome={() => setMode('selector')} />}
-            </>
-          )}
-        </SafeAreaView>
-      </View>
+      <AuthProvider>
+        <View style={styles.root}>
+          <ExpoStatusBar style="light" />
+          <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
+            {!fontsLoaded ? (
+              <SplashIndicator />
+            ) : (
+              <AppShell />
+            )}
+          </SafeAreaView>
+        </View>
+      </AuthProvider>
     </TweaksProvider>
+  );
+}
+
+function SplashIndicator() {
+  return (
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+      <ActivityIndicator color={C.amber} />
+    </View>
+  );
+}
+
+function AppShell() {
+  const { mode: authMode, user, loading } = useAuth();
+  const [mode, setMode] = useState('selector');
+
+  if (loading) return <SplashIndicator />;
+
+  // Live mode + caregiver path requires login. Mock mode skips this.
+  if (authMode === 'live' && mode === 'caregiver' && !user) {
+    return <LoginScreen />;
+  }
+
+  return (
+    <>
+      {mode === 'selector' && <ModeSelector onSelect={setMode} />}
+      {mode === 'caregiver' && <CaregiverApp onSwitchMode={() => setMode('elder')} onHome={() => setMode('selector')} />}
+      {mode === 'elder' && <ElderApp onSwitchMode={() => setMode('caregiver')} onHome={() => setMode('selector')} />}
+    </>
   );
 }
 

@@ -1,7 +1,12 @@
 import React from 'react';
 import Svg, { Path, Polyline, Line, Rect, Circle, Polygon } from 'react-native-svg';
 
-const common = { fill: 'none', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' };
+const common = {
+  fill: 'none',
+  strokeWidth: 2,
+  strokeLinecap: 'round',
+  strokeLinejoin: 'round',
+} as const;
 
 export const HomeIcon = ({ size = 22, color = '#fff' }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" stroke={color} {...common}>

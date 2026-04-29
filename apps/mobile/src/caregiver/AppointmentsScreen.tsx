@@ -50,7 +50,7 @@ export default function AppointmentsScreen() {
     if (parts.length !== 3) return;
     const [y, m, d] = parts.map((x) => parseInt(x, 10));
     const target = new Date(y, m - 1, d);
-    const diff = Math.ceil((target - new Date()) / (1000 * 60 * 60 * 24));
+    const diff = Math.ceil((target.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
     const rec = { id: Date.now(), day: d, month: m, year: y, time: newTime, dept: newDept, hospital: newHosp || '待確認', note: newNote, daysLeft: diff, urgency: diff <= 3 ? 'amber' : diff <= 14 ? 'teal' : 'blue', done: false };
     createAppointment(rec); // MOCK (MOCKS.md #8)
     setAppts((p) => [...p, rec]);
@@ -68,7 +68,7 @@ export default function AppointmentsScreen() {
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <Text style={{ fontSize: 16, fontWeight: '700', color: C.text }}>{viewYear}年 {monthNames[viewMonth]}</Text>
             <View style={{ flexDirection: 'row', gap: 6 }}>
-              {[[-1, '‹'], [1, '›']].map(([d, l]) => (
+              {([[-1, '‹'], [1, '›']] as const).map(([d, l]) => (
                 <Pressable
                   key={d}
                   onPress={() => {

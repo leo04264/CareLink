@@ -1,8 +1,15 @@
-import React, { useEffect, useRef } from 'react';
-import { Animated, Easing } from 'react-native';
+import React, { useEffect, useRef, type ReactNode } from 'react';
+import { Animated, Easing, type StyleProp, type ViewStyle } from 'react-native';
+
+interface FadeInProps {
+  children?: ReactNode;
+  duration?: number;
+  offset?: number;
+  style?: StyleProp<ViewStyle>;
+}
 
 // Mirrors the CSS .anim-fadeIn: opacity 0->1, translateY 6->0, 300ms.
-export default function FadeIn({ children, duration = 300, offset = 6, style }) {
+export default function FadeIn({ children, duration = 300, offset = 6, style }: FadeInProps) {
   const anim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     Animated.timing(anim, { toValue: 1, duration, easing: Easing.out(Easing.ease), useNativeDriver: true }).start();

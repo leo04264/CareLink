@@ -19,7 +19,13 @@ function fmt(d) {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
-export default function TimeField({ value, onChange, label }) {
+interface TimeFieldProps {
+  value: string;
+  onChange: (v: string) => void;
+  label?: string;
+}
+
+export default function TimeField({ value, onChange, label }: TimeFieldProps) {
   const [show, setShow] = useState(false);
 
   if (Platform.OS === 'web' || !DateTimePicker) {

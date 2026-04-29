@@ -44,7 +44,11 @@ function SubElderProfile({ onBack }) {
           </View>
           <Text style={{ fontSize: 14, color: C.text2 }}>長輩頭像</Text>
         </View>
-        {[['姓名', name, setName], ['年齡', age, setAge], ['稱謂', relation, setRelation]].map(([lbl, val, setter]) => (
+        {([
+          ['姓名', name, setName],
+          ['年齡', age, setAge],
+          ['稱謂', relation, setRelation],
+        ] as const).map(([lbl, val, setter]) => (
           <View key={lbl}>
             <Text style={{ fontSize: 11, color: C.text3, marginBottom: 6 }}>{lbl}</Text>
             <TextInput value={val} onChangeText={setter} style={input} placeholderTextColor={C.text3} />
@@ -77,7 +81,17 @@ function SubElderProfile({ onBack }) {
 }
 
 function SubNotifSettings({ onBack }) {
-  const [settings, setSettings] = useState({ sos: true, medMissed: true, medDone: true, dailyReport: true, health: false, location: false, quietHourOn: true });
+  const [settings, setSettings] = useState<{
+    sos: boolean;
+    medMissed: boolean;
+    medDone: boolean;
+    dailyReport: boolean;
+    health: boolean;
+    location: boolean;
+    quietHourOn: boolean;
+    quietStart?: string;
+    quietEnd?: string;
+  }>({ sos: true, medMissed: true, medDone: true, dailyReport: true, health: false, location: false, quietHourOn: true });
   const toggle = (k) => {
     const next = { ...settings, [k]: !settings[k] };
     setSettings(next);
@@ -192,7 +206,11 @@ function SubContacts({ onBack }) {
         {showAdd ? (
           <View style={{ backgroundColor: C.card, borderWidth: 0.5, borderColor: C.border2, borderRadius: 14, padding: 14 }}>
             <Text style={{ fontSize: 13, fontWeight: '600', color: C.text, marginBottom: 12 }}>新增聯絡人</Text>
-            {[['姓名 *', newName, setNewName, '例：三弟 志遠'], ['電話 *', newPhone, setNewPhone, '0912-000-000'], ['關係', newRel, setNewRel, '例：次子']].map(([lbl, val, setter, ph]) => (
+            {([
+              ['姓名 *', newName, setNewName, '例：三弟 志遠'],
+              ['電話 *', newPhone, setNewPhone, '0912-000-000'],
+              ['關係', newRel, setNewRel, '例：次子'],
+            ] as const).map(([lbl, val, setter, ph]) => (
               <View key={lbl} style={{ marginBottom: 10 }}>
                 <Text style={{ fontSize: 10, color: C.text3, marginBottom: 4 }}>{lbl}</Text>
                 <TextInput value={val} onChangeText={setter} placeholder={ph} placeholderTextColor={C.text3} style={input} />
