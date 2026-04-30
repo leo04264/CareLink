@@ -13,5 +13,9 @@ export const StorageKeys = {
   accessToken: 'carelink.auth.accessToken',
   refreshToken: 'carelink.auth.refreshToken',
   user: 'carelink.auth.user',
+  elderToken: 'carelink.auth.elderToken', // long-lived elder JWT (no refresh)
+  elderId: 'carelink.auth.elderId',
+  familyId: 'carelink.auth.familyId', // cached after bootstrap; no list-my-families endpoint
+  caredElderId: 'carelink.auth.caredElderId', // caregiver-side: elder under their care
   apiMode: 'carelink.dev.apiMode', // 'mock' | 'live'
 } as const;

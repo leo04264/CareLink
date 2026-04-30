@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { View, Pressable, Text } from 'react-native';
 import { C } from '../theme/tokens';
 import { useTweaks } from '../context/TweaksContext';
+import { useAuth } from '../context/AuthContext';
+import { useLiveReportStatus } from '../services/liveStatus';
 import DashboardScreen from './DashboardScreen';
 import HealthVitalsScreen from './HealthVitalsScreen';
 import MedicationsScreen from './MedicationsScreen';
@@ -21,7 +23,11 @@ export default function CaregiverApp({ onSwitchMode, onHome }) {
   const [showMap, setShowMap] = useState(false);
   const [showTweaks, setShowTweaks] = useState(false);
   const { tweaks } = useTweaks();
-  const reportStatus = tweaks.reportStatus;
+  const { mode: authMode, caredElderId } = useAuth();
+  const liveStatus = useLiveReportStatus(caredElderId, authMode === 'live');
+  // Live mode: derived from /checkins/today polling. Mock mode: TweaksContext
+  // override (so demo-mode users can still flip status to test UI states).
+  const reportStatus = authMode === 'live' && liveStatus ? liveStatus : tweaks.reportStatus;
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg, position: 'relative' }}>

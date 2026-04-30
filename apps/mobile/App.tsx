@@ -15,6 +15,7 @@ import { AuthProvider, useAuth } from './src/context/AuthContext';
 import CaregiverApp from './src/caregiver/CaregiverApp';
 import ElderApp from './src/elder/ElderApp';
 import LoginScreen from './src/auth/LoginScreen';
+import ElderPairingScreen from './src/elder/ElderPairingScreen';
 
 function ModeSelector({ onSelect }: { onSelect: (id: string) => void }) {
   const modes = [
@@ -82,7 +83,7 @@ function SplashIndicator() {
 }
 
 function AppShell() {
-  const { mode: authMode, user, loading } = useAuth();
+  const { mode: authMode, user, elderId, loading } = useAuth();
   const [mode, setMode] = useState('selector');
 
   if (loading) return <SplashIndicator />;
@@ -90,6 +91,11 @@ function AppShell() {
   // Live mode + caregiver path requires login. Mock mode skips this.
   if (authMode === 'live' && mode === 'caregiver' && !user) {
     return <LoginScreen />;
+  }
+
+  // Live mode + elder path requires a paired elder JWT.
+  if (authMode === 'live' && mode === 'elder' && !elderId) {
+    return <ElderPairingScreen />;
   }
 
   return (
