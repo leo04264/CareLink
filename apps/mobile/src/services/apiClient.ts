@@ -28,11 +28,15 @@ export class ApiClientError extends Error {
 
 interface RequestOptions extends Omit<RequestInit, 'body'> {
   body?: unknown;
-  auth?: boolean; // default true — set false for /auth/login etc.
+  // 'user' = caregiver access token (default — most endpoints)
+  // 'elder' = elder JWT (POST checkin, vitals, etc. from elder app)
+  // false = unauthenticated (login, register, refresh, verify pair code)
+  auth?: 'user' | 'elder' | false;
 }
 
-async function authHeader(): Promise<Record<string, string>> {
-  const token = await storage.get(StorageKeys.accessToken);
+async function authHeader(kind: 'user' | 'elder'): Promise<Record<string, string>> {
+  const key = kind === 'elder' ? StorageKeys.elderToken : StorageKeys.accessToken;
+  const token = await storage.get(key);
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
@@ -46,12 +50,12 @@ export async function apiRequest<T>(path: string, opts: RequestOptions = {}): Pr
     );
   }
 
-  const { body, auth = true, headers, ...rest } = opts;
+  const { body, auth = 'user', headers, ...rest } = opts;
   const url = `${base}${path.startsWith('/') ? path : `/${path}`}`;
 
   const finalHeaders: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...(auth ? await authHeader() : {}),
+    ...(auth === false ? {} : await authHeader(auth)),
     ...((headers as Record<string, string>) ?? {}),
   };
 
