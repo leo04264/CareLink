@@ -5,15 +5,28 @@ import { C } from '../theme/tokens';
 import { ChevRightIcon } from '../components/Icons';
 import RadialGlow from '../components/RadialGlow';
 import { reportOK } from '../services/mocks';
+import { postCheckin } from '../services/checkin';
+import { useAuth } from '../context/AuthContext';
 
 export default function ElderHome({ onSOS, onMed, onConfirm, onHealth, onAppt }) {
+  const { mode: authMode, elderId } = useAuth();
   const [confirmed, setConfirmed] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const handleConfirm = () => {
-    // MOCK: POST /api/elders/:id/report (MOCKS.md #4)
-    reportOK();
-    setConfirmed(true);
-    onConfirm && onConfirm();
+  const handleConfirm = async () => {
+    setSubmitError(null);
+    try {
+      if (authMode === 'live' && elderId) {
+        await postCheckin(elderId);
+      } else {
+        reportOK();
+      }
+      setConfirmed(true);
+      onConfirm && onConfirm();
+    } catch (e) {
+      // Backend returned non-2xx (e.g. CHECKIN_ALREADY_DONE) or network down.
+      setSubmitError((e as Error)?.message || '回報失敗，請稍後再試');
+    }
   };
 
   if (confirmed) {
@@ -63,6 +76,11 @@ export default function ElderHome({ onSOS, onMed, onConfirm, onHealth, onAppt })
             </Pressable>
           </View>
           <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.25)', marginTop: 14 }}>點一下按鈕回報狀態</Text>
+          {submitError && (
+            <View style={{ marginTop: 12, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10, backgroundColor: 'rgba(239,68,68,0.12)', borderWidth: 0.5, borderColor: C.redDim }}>
+              <Text style={{ color: C.red, fontSize: 14, textAlign: 'center' }}>{submitError}</Text>
+            </View>
+          )}
         </View>
 
         {/* Quick actions */}

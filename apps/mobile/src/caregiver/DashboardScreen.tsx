@@ -5,8 +5,10 @@ import { BellIcon, PhoneIcon, MapIcon, CheckIcon, XIcon } from '../components/Ic
 import Pulse from '../components/Pulse';
 import RadialGlow from '../components/RadialGlow';
 import { confirmMedDose } from '../services/mocks';
+import { useAuth } from '../context/AuthContext';
 
 export default function DashboardScreen({ onSOS, onCall, onMap, goTo, reportStatus = 'warning' }) {
+  const { pairCode, dismissPairCode, regeneratePairCode } = useAuth();
   const [meds, setMeds] = useState([
     { id: 1, name: '降血壓藥', time: '08:00', done: true },
     { id: 2, name: '維他命 D', time: '12:00', done: true },
@@ -70,6 +72,28 @@ export default function DashboardScreen({ onSOS, onCall, onMap, goTo, reportStat
   return (
     <View style={{ flex: 1, position: 'relative' }}>
       <ScrollView contentContainerStyle={{ paddingBottom: 96 }}>
+        {/* Live-mode pair code banner — surfaced once after bootstrap or
+            when caregiver taps "重新產生" in TweaksPanel. */}
+        {pairCode && (
+          <View style={{ backgroundColor: 'rgba(20,184,166,0.12)', borderBottomWidth: 0.5, borderBottomColor: C.tealDim, padding: 12, gap: 6 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text style={{ fontSize: 12, color: C.text2 }}>長輩端配對碼（{pairCode.elderName}）</Text>
+              <Pressable onPress={dismissPairCode} hitSlop={10}>
+                <Text style={{ fontSize: 12, color: C.text3 }}>✕</Text>
+              </Pressable>
+            </View>
+            <Text style={{ fontSize: 28, color: C.teal, letterSpacing: 6, fontFamily: 'Syne_700Bold', textAlign: 'center', paddingVertical: 4 }}>
+              {pairCode.code}
+            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text style={{ fontSize: 11, color: C.text3 }}>10 分鐘內有效。在長輩手機 App 上輸入</Text>
+              <Pressable onPress={regeneratePairCode} hitSlop={6}>
+                <Text style={{ fontSize: 11, color: C.teal }}>重新產生</Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
+
         {/* Critical banner */}
         {reportStatus === 'critical' && (
           <View style={{ backgroundColor: 'rgba(239,68,68,0.12)', borderBottomWidth: 0.5, borderBottomColor: 'rgba(239,68,68,0.35)', padding: 10, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
