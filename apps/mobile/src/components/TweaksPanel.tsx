@@ -13,7 +13,7 @@ interface TweaksPanelProps {
 
 export default function TweaksPanel({ visible, onClose }: TweaksPanelProps) {
   const { tweaks, setTweak } = useTweaks();
-  const { mode: authMode, liveAvailable, setMode: setAuthMode, user, logout } = useAuth();
+  const { mode: authMode, liveAvailable, setMode: setAuthMode, user, elderId, logout, unpairElder } = useAuth();
   const baseUrl = getApiBaseUrl();
   if (!visible) return null;
   return (
@@ -47,6 +47,14 @@ export default function TweaksPanel({ visible, onClose }: TweaksPanelProps) {
                 <Text style={{ fontSize: 11, color: C.text2 }}>已登入：{user.name}</Text>
                 <Pressable onPress={logout} style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 6, backgroundColor: C.redGlow, borderWidth: 0.5, borderColor: C.redDim }}>
                   <Text style={{ fontSize: 11, color: C.red }}>登出</Text>
+                </Pressable>
+              </View>
+            )}
+            {authMode === 'live' && elderId && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 6, paddingTop: 6, borderTopWidth: 0.5, borderTopColor: 'rgba(255,255,255,0.08)' }}>
+                <Text style={{ fontSize: 11, color: C.text2 }}>長輩端已配對</Text>
+                <Pressable onPress={unpairElder} style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 6, backgroundColor: C.redGlow, borderWidth: 0.5, borderColor: C.redDim }}>
+                  <Text style={{ fontSize: 11, color: C.red }}>解除配對</Text>
                 </Pressable>
               </View>
             )}

@@ -8,6 +8,7 @@ import {
   refresh as authRefresh,
   register as authRegister,
 } from '../services/auth';
+import { clearElderSession, verifyPairCode } from '../services/elder';
 import { ApiClientError } from '../services/apiClient';
 import { canUseLiveApi } from '../services/apiConfig';
 import { storage, StorageKeys } from '../services/storage';
@@ -28,6 +29,7 @@ export type AuthMode = 'mock' | 'live';
 interface AuthState {
   mode: AuthMode;
   user: AuthUser | null;
+  elderId: string | null; // set after a successful pair-code verify
   loading: boolean; // true while we hydrate from storage on boot
   error: string | null;
 }
@@ -38,12 +40,15 @@ interface AuthContextValue extends AuthState {
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  pairElder: (code: string) => Promise<void>;
+  unpairElder: () => Promise<void>;
   clearError: () => void;
 }
 
 const AuthCtx = createContext<AuthContextValue>({
   mode: 'mock',
   user: null,
+  elderId: null,
   loading: true,
   error: null,
   liveAvailable: false,
@@ -51,6 +56,8 @@ const AuthCtx = createContext<AuthContextValue>({
   login: async () => {},
   register: async () => {},
   logout: async () => {},
+  pairElder: async () => {},
+  unpairElder: async () => {},
   clearError: () => {},
 });
 
@@ -59,6 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({
     mode: 'mock',
     user: null,
+    elderId: null,
     loading: true,
     error: null,
   });
@@ -68,6 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const storedMode = (await storage.get(StorageKeys.apiMode)) as AuthMode | null;
       const mode: AuthMode = storedMode === 'live' && liveAvailable ? 'live' : 'mock';
       let user: AuthUser | null = null;
+      let elderId: string | null = null;
       if (mode === 'live') {
         const session = await loadStoredSession();
         if (session) {
@@ -78,8 +87,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             user = null;
           }
         }
+        // Elder JWT is long-lived (no refresh); presence in storage = paired.
+        elderId = await storage.get(StorageKeys.elderId);
       }
-      setState({ mode, user, loading: false, error: null });
+      setState({ mode, user, elderId, loading: false, error: null });
     })();
   }, [liveAvailable]);
 
@@ -117,11 +128,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setState((s) => ({ ...s, user: null, error: null }));
   }, []);
 
+  const pairElder = useCallback(async (code: string) => {
+    setState((s) => ({ ...s, error: null }));
+    try {
+      const data = await verifyPairCode(code.trim().toUpperCase());
+      setState((s) => ({ ...s, elderId: data.elderId, error: null }));
+    } catch (e) {
+      const msg = formatAuthError(e);
+      setState((s) => ({ ...s, error: msg }));
+      throw e;
+    }
+  }, []);
+
+  const unpairElder = useCallback(async () => {
+    await clearElderSession();
+    setState((s) => ({ ...s, elderId: null, error: null }));
+  }, []);
+
   const clearError = useCallback(() => setState((s) => ({ ...s, error: null })), []);
 
   return (
     <AuthCtx.Provider
-      value={{ ...state, liveAvailable, setMode, login, register, logout, clearError }}
+      value={{ ...state, liveAvailable, setMode, login, register, logout, pairElder, unpairElder, clearError }}
     >
       {children}
     </AuthCtx.Provider>
@@ -135,6 +163,7 @@ export function useAuth() {
 function formatAuthError(e: unknown): string {
   if (e instanceof ApiClientError) {
     if (e.code === ErrorCodes.AUTH_INVALID_CREDENTIALS) return '帳號或密碼錯誤';
+    if (e.code === ErrorCodes.AUTH_PAIR_CODE_INVALID) return '配對碼錯誤或已過期';
     if (e.code === ErrorCodes.VALIDATION_ERROR) return '輸入格式不正確';
     if (e.code === ErrorCodes.ALREADY_EXISTS) return '此電子信箱已被註冊';
     if (e.status === 0) return '無法連線後端，請確認伺服器是否啟動';
