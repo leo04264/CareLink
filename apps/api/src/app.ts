@@ -33,7 +33,7 @@ export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInsta
   });
 
   await app.register(cors, {
-    origin: true, // tighten before launch; see spec §9
+    origin: buildCorsOriginCheck(),
     credentials: true,
   });
 
@@ -62,4 +62,38 @@ export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInsta
   void ensureBucketReady().catch((err) => app.log.warn({ err }, 'r2 bucket setup'));
 
   return app;
+}
+
+// Built-in allowlist + dynamic CORS_ORIGINS env (comma-separated).
+// Always allowed:
+//   - https://leo04264.github.io           (GitHub Pages prod)
+//   - https://*.trycloudflare.com          (Cloudflare quick tunnel demo URL)
+//   - http://localhost:* / http://127.0.0.1:*  (local dev for both web + simulator)
+//   - undefined origin                      (server-to-server, curl, mobile native fetch)
+type OriginCallback = (err: Error | null, allow: boolean) => void;
+
+function buildCorsOriginCheck(): (origin: string | undefined, cb: OriginCallback) => void {
+  const extra = (process.env.CORS_ORIGINS ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  return (origin, cb) => {
+    if (!origin) return cb(null, true);
+    try {
+      const url = new URL(origin);
+      const isHttps = url.protocol === 'https:';
+      const isHttp = url.protocol === 'http:';
+      const host = url.hostname;
+
+      if (isHttps && host === 'leo04264.github.io') return cb(null, true);
+      if (isHttps && host.endsWith('.trycloudflare.com')) return cb(null, true);
+      if (isHttp && (host === 'localhost' || host === '127.0.0.1')) return cb(null, true);
+      if (extra.includes(origin)) return cb(null, true);
+
+      return cb(null, false);
+    } catch {
+      return cb(null, false);
+    }
+  };
 }

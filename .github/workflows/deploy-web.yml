@@ -10,6 +10,12 @@ on:
       - 'package-lock.json'
       - '.github/workflows/deploy-web.yml'
   workflow_dispatch:
+    inputs:
+      apiBaseUrl:
+        description: 'Backend base URL to bake into the web build (e.g. https://xxx.trycloudflare.com). Leave blank to fall back to runtime auto-detect.'
+        type: string
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -37,6 +43,10 @@ jobs:
         run: npm ci
 
       - name: Export Expo web
+        env:
+          # Baked into the bundle at build time via Expo's EXPO_PUBLIC_* convention.
+          # Empty string = fall back to runtime detection in apiConfig.ts.
+          EXPO_PUBLIC_API_URL: ${{ inputs.apiBaseUrl }}
         run: npm run build:mobile:web
 
       - name: Upload artifact
