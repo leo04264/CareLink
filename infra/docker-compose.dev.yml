@@ -9,8 +9,10 @@ services:
       POSTGRES_USER: carelink
       POSTGRES_PASSWORD: carelink
       POSTGRES_DB: carelink
+    # Host port 5433 → container 5432. Avoids clashing with other local
+    # postgres instances (e.g. another project's app-db on 5432).
     ports:
-      - '5432:5432'
+      - '5433:5432'
     volumes:
       - carelink-pg:/var/lib/postgresql/data
     healthcheck:
@@ -22,8 +24,10 @@ services:
   redis:
     image: redis:7-alpine
     container_name: carelink-redis
+    # Host port 6380 → container 6379. Avoids clashing with other local
+    # redis instances on 6379.
     ports:
-      - '6379:6379'
+      - '6380:6379'
     volumes:
       - carelink-redis:/data
     healthcheck:
